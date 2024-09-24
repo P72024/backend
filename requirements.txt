@@ -1,0 +1,2 @@
+Flask
+pika # Python client for RabbitMQ
