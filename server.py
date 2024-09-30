@@ -19,12 +19,12 @@ relay = MediaRelay()
 
 
 async def index(request):
-    content = open(os.path.join(ROOT, "index.html"), "r").read()
+    content = open(os.path.join(ROOT, "../client/index.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
 
 
 async def javascript(request):
-    content = open(os.path.join(ROOT, "client.js"), "r").read()
+    content = open(os.path.join(ROOT, "../client/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
 
