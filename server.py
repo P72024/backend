@@ -41,12 +41,13 @@ async def offer(request):
 
     log_info("Created for %s", request.remote)
 
-    # prepare local media
+    
     player = MediaPlayer(os.path.join(ROOT, "demo-instruct.wav"))
-    if True:
-        recorder = MediaRecorder("test.wav")
+    args.record_to = params.get("record_to","")
+    if args.record_to:
+        recorder = MediaRecorder(args.record_to)
     else:
-        recorder = MediaBlackhole()
+        recorder = MediaRecorder("test_file.wav")
 
     @pc.on("datachannel")
     def on_datachannel(channel):
