@@ -1,6 +1,6 @@
 # Aduio (.wav) filer
 *.wav
-~demo-instruct.wav
+!demo-instruct.wav
 
 
 # Byte-compiled / optimized / DLL files
