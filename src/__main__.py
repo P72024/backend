@@ -6,9 +6,8 @@ import os
 import ssl
 import uuid
 from aiohttp import web
-from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
-from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
-from av import VideoFrame
+from aiortc import RTCPeerConnection, RTCSessionDescription
+from aiortc.contrib.media import MediaPlayer, MediaRecorder, MediaRelay
 
 ROOT = os.path.dirname(__file__)
 
@@ -16,7 +15,8 @@ logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
 
-# CORS handler to respond to preflight requests
+# CORS handler to respond to preflight requests. Når vi sender en post request til /offer fra client.js, så fetcher getter den åbenbart options først. 
+# Denne funtion håndterer dette og tillader CORS mellem vores to ports.
 async def handle_options(request):
     return web.Response(
         headers={
@@ -26,6 +26,7 @@ async def handle_options(request):
         }
     )
 
+# Her laves pc (peer connection) Vi optager med MediaRecorder, hvis eventet er "track"
 async def offer(request):
     params = await request.json()
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
