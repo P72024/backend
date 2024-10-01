@@ -16,18 +16,15 @@ logger = logging.getLogger("pc")
 pcs = set()
 relay = MediaRelay()
 
-
-
-
-async def index(request):
-    content = open(os.path.join(ROOT, "../../client/index.html"), "r").read()
-    return web.Response(content_type="text/html", text=content)
-
-
-async def javascript(request):
-    content = open(os.path.join(ROOT, "../../client/client.js"), "r").read()
-    return web.Response(content_type="application/javascript", text=content)
-
+# CORS handler to respond to preflight requests
+async def handle_options(request):
+    return web.Response(
+        headers={
+            "Access-Control-Allow-Origin": "http://127.0.0.1:8010",  # Specify your frontend's URL
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+        }
+    )
 
 async def offer(request):
     params = await request.json()
@@ -42,9 +39,8 @@ async def offer(request):
 
     log_info("Created for %s", request.remote)
 
-    
-    player = MediaPlayer(os.path.join(ROOT, "demo-instruct.wav"))
-    args.record_to = params.get("record_to","")
+    player = MediaPlayer(os.path.join(ROOT, "../demo-instruct.wav"))
+    args.record_to = params.get("record_to", "")
     if args.record_to:
         recorder = MediaRecorder(args.record_to)
     else:
@@ -87,16 +83,15 @@ async def offer(request):
 
     return web.Response(
         content_type="application/json",
-        headers= {
-            "Access-Control-Allow-Origin": ["http://127.0.0.1:8010", "http://localhost:8010", "http://127.0.0.1", "http://localhost"],  # Set your origin here (e.g., "https://example.com")
+        headers={
+            "Access-Control-Allow-Origin": "http://127.0.0.1:8010",  # Specify your frontend's URL
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
         },
-        
         text=json.dumps(
             {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
         ),
     )
-
 
 async def on_shutdown(app):
     # close peer connections
@@ -104,9 +99,7 @@ async def on_shutdown(app):
     await asyncio.gather(*coros)
     pcs.clear()
 
-print("HALOOO udenfor main")
 if __name__ == "__main__":
-    print("Backend ONLINE")
     parser = argparse.ArgumentParser(
         description="WebRTC audio / data-channels demo"
     )
@@ -127,17 +120,17 @@ if __name__ == "__main__":
     else:
         logging.basicConfig(level=logging.INFO)
 
+    ssl_context = None
     if args.cert_file:
         ssl_context = ssl.SSLContext()
         ssl_context.load_cert_chain(args.cert_file, args.key_file)
-    else:
-        ssl_context = None
 
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
     # app.router.add_get("/", index)
     # app.router.add_get("/client.js", javascript)
     app.router.add_post("/offer", offer)
+    app.router.add_options("/offer", handle_options)  # Add CORS handling for OPTIONS requests
     web.run_app(
         app, access_log=None, host=args.host, port=args.port, ssl_context=ssl_context
     )
