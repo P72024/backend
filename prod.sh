@@ -15,17 +15,18 @@ if [ "$ENV" = "production" ]; then
     else \
       echo "/usr/local/cuda already exists. Skipping nvidia-cudnn installation."; \
     fi;
+    # Symlink all files and symlinks from the CUDA include folder to /usr/include
+    find /usr/local/cuda/flat/linux-aarch64/cuda12/include -exec ln -s {} /usr/include/ \;
+
+    # Symlink all files and symlinks from the CUDA lib folder to /usr/lib
+    find /usr/local/cuda/flat/linux-aarch64/cuda12/lib -exec ln -s {} /usr/lib/ \;
   # Any production-related setup or commands
 else
   echo "Running in development mode..."
   # Any development-related setup or commands
 fi
 
-# Symlink all files and symlinks from the CUDA include folder to /usr/include
-find /usr/local/cuda/flat/linux-aarch64/cuda12/include -exec ln -s {} /usr/include/ \;
 
-# Symlink all files and symlinks from the CUDA lib folder to /usr/lib
-find /usr/local/cuda/flat/linux-aarch64/cuda12/lib -exec ln -s {} /usr/lib/ \;
 
 cd /app
 pip3 install -r ./requirements.txt
