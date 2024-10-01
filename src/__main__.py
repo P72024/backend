@@ -39,7 +39,7 @@ async def offer(request):
 
     log_info("Created for %s", request.remote)
 
-    player = MediaPlayer(os.path.join(ROOT, "../demo-instruct.wav"))
+    # player = MediaPlayer(os.path.join(ROOT, "../demo-instruct.wav"))
     args.record_to = params.get("record_to", "")
     if args.record_to:
         recorder = MediaRecorder(args.record_to)
@@ -65,7 +65,7 @@ async def offer(request):
         log_info("Track %s received", track.kind)
 
         if track.kind == "audio":
-            pc.addTrack(player.audio)
+            # pc.addTrack(player.audio)
             recorder.addTrack(track)
 
         @track.on("ended")
