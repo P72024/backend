@@ -4,4 +4,6 @@ WORKDIR /app/
 
 COPY . .
 
-ENTRYPOINT [ "python3", "./src/" ]
+RUN pip install -r requirements.txt
+
+ENTRYPOINT [ "python3", "src/" ]
