@@ -87,6 +87,11 @@ async def offer(request):
 
     return web.Response(
         content_type="application/json",
+        headers= {
+            "Access-Control-Allow-Origin": ["http://127.0.0.1:8010", "http://localhost:8010", "http://127.0.0.1", "http://localhost"],  # Set your origin here (e.g., "https://example.com")
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        },
+        
         text=json.dumps(
             {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
         ),
@@ -130,8 +135,8 @@ if __name__ == "__main__":
 
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
-    app.router.add_get("/", index)
-    app.router.add_get("/client.js", javascript)
+    # app.router.add_get("/", index)
+    # app.router.add_get("/client.js", javascript)
     app.router.add_post("/offer", offer)
     web.run_app(
         app, access_log=None, host=args.host, port=args.port, ssl_context=ssl_context

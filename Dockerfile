@@ -6,4 +6,4 @@ COPY . .
 
 RUN pip install -r requirements.txt
 
-ENTRYPOINT [ "python3", "./src/" ]
+ENTRYPOINT [ "python3", "src/" ]
