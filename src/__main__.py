@@ -127,8 +127,6 @@ if __name__ == "__main__":
 
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
-    # app.router.add_get("/", index)
-    # app.router.add_get("/client.js", javascript)
     app.router.add_post("/offer", offer)
     app.router.add_options("/offer", handle_options)  # Add CORS handling for OPTIONS requests
     web.run_app(
