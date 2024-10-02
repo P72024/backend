@@ -20,7 +20,7 @@ relay = MediaRelay()
 async def handle_options(request):
     return web.Response(
         headers={
-            "Access-Control-Allow-Origin": ["http://127.0.0.1:8010", "http://localhost:8010"],  # Specify your frontend's URL
+            "Access-Control-Allow-Origin": "http://127.0.0.1:8010",  # Specify your frontend's URL
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type",
         }
