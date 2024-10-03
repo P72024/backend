@@ -8,6 +8,7 @@ import uuid
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaPlayer, MediaRecorder, MediaRelay
+from whisper import transcribe
 
 ROOT = os.path.dirname(__file__)
 
@@ -41,11 +42,9 @@ async def offer(request):
     log_info("Created for %s", request.remote)
 
     # player = MediaPlayer(os.path.join(ROOT, "../demo-instruct.wav"))
-    args.record_to = params.get("record_to", "")
-    if args.record_to:
-        recorder = MediaRecorder(args.record_to)
-    else:
-        recorder = MediaRecorder("test_file.wav")
+    file_id = uuid.uuid4()
+    file_path = f"{file_id}.wav"
+    recorder = MediaRecorder(f"{file_path}")
 
     @pc.on("datachannel")
     def on_datachannel(channel):
@@ -73,12 +72,13 @@ async def offer(request):
         async def on_ended():
             log_info("Track %s ended", track.kind)
             await recorder.stop()
+            transcribe(file_path)
 
-    # handle offer
+    # Handle offer
     await pc.setRemoteDescription(offer)
     await recorder.start()
 
-    # send answer
+    # Send answer
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
 
@@ -95,7 +95,7 @@ async def offer(request):
     )
 
 async def on_shutdown(app):
-    # close peer connections
+    # Close peer connections
     coros = [pc.close() for pc in pcs]
     await asyncio.gather(*coros)
     pcs.clear()
