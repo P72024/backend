@@ -15,6 +15,8 @@ RUN pip3 install -r ./requirements.txt
 # Set environment variable based on the ARG
 ENV mode=$ENV
 
+EXPOSE 3000
+
 # Verbose logging to ensure each step is tracked
 ENTRYPOINT [ "sh", "./prod.sh" ]
 
