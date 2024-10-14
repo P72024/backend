@@ -14,7 +14,8 @@ model_size = "tiny"
 model = WhisperModel(model_size, device="auto", compute_type="int8")
 
 def transcribe(audio_file):
-    segments, info = model.transcribe(audio_file, beam_size=5)
+    segments, info = model.transcribe(audio_file, beam_size=5, vad_filter=True)
+    info.duration_after_vad
 
     print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
 

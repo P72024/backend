@@ -1,59 +1,42 @@
 import asyncio
-from aiohttp import web
-from aiortc import RTCPeerConnection, RTCSessionDescription
-import aiohttp_cors
-import json
+from io import BytesIO
+import websockets
+from whisper import transcribe
+import numpy as np
 
-peerConnections = set()
+# A buffer to hold audio chunks
+audio_chunks = []
 
-async def offer(request):
-    params = await request.json()
-    offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
-    con = RTCPeerConnection()
-    peerConnections.add(con)
+async def handler(websocket, path):
+    global audio_chunks
+    while True:
+        try:
+            # Receiving binary data directly from the client
+            data = await websocket.recv()
 
-    @con.on("connectionstatechange")
-    async def on_connectionstatechange():
-        if con.connectionState == "failed":
-            await con.close()
-            peerConnections.discard(con)
+            # Check if the data is binary (bytes)
+            if isinstance(data, str):
+                print("Received unexpected text data")
+            else:
+                audio_chunks.append(data)  # Collect binary data chunks
+                audio_binary_io = BytesIO(b''.join(audio_chunks))
+                # array_data = np.frombuffer(data, dtype=np.int8)  # Check if the data is audio
+                transcribe(audio_binary_io)
 
-    @con.on('datachannel')
-    def on_datachannel(channel):
-        print(f"New data channel: {channel.label}")
-        
-        @channel.on("message")
-        def on_message(message):
-            print(f"Received message on channel {channel.label}: {message}")
-            print(f"Type of message: {type(message)}")
+            # Optionally, send an acknowledgment back to the client
+            await websocket.send("Chunk received")
+        except websockets.ConnectionClosed:
+            print("Connection closed")
+            break
 
-    await con.setRemoteDescription(offer)
-    answer = await con.createAnswer()
-    await con.setLocalDescription(answer)
+    # After the connection is closed, save the collected audio chunks
+    with open("received_audio.webm", "wb") as f:
+        for chunk in audio_chunks:
+            f.write(chunk)
+    print("All chunks written to 'received_audio.webm'")
 
-    return web.Response(
-        content_type="application/json",
-        text=json.dumps(
-            {"sdp": con.localDescription.sdp, "type": con.localDescription.type}
-        ),
-    )
+# Start WebSocket server
+start_server = websockets.serve(handler, "127.0.0.1", 3000)
 
-async def on_shutdown(app):
-    coros = [pc.close() for pc in peerConnections]
-    await asyncio.gather(*coros)
-    peerConnections.clear()
-
-if __name__ == "__main__":
-    app = web.Application()
-    app.on_shutdown.append(on_shutdown)
-    app.router.add_post("/offer", offer)
-    cors = aiohttp_cors.setup(app, defaults={
-        "*": aiohttp_cors.ResourceOptions(
-            allow_credentials=True,
-            expose_headers="*",
-            allow_headers="*",
-        )
-    })
-    for route in list(app.router.routes()):
-        cors.add(route)
-    web.run_app(app, host="127.0.0.1", port=3000)
+asyncio.get_event_loop().run_until_complete(start_server)
+asyncio.get_event_loop().run_forever()
