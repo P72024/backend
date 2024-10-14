@@ -14,14 +14,10 @@ async def handler(websocket, path):
             # Receiving binary data directly from the client
             data = await websocket.recv()
 
-            # Check if the data is binary (bytes)
-            if isinstance(data, str):
-                print("Received unexpected text data")
-            else:
-                audio_chunks.append(data)  # Collect binary data chunks
-                audio_binary_io = BytesIO(b''.join(audio_chunks))
-                # array_data = np.frombuffer(data, dtype=np.int8)  # Check if the data is audio
-                transcribe(audio_binary_io)
+            audio_chunks.append(data)  # Collect binary data chunks
+            audio_binary_io = BytesIO(b''.join(audio_chunks))
+            # array_data = np.frombuffer(data, dtype=np.int8)  # Check if the data is audio
+            transcribe(audio_binary_io)
 
             # Optionally, send an acknowledgment back to the client
             await websocket.send("Chunk received")
