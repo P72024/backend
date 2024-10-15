@@ -1,0 +1,23 @@
+name: Automatic testing
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        name: Check out
+      
+      - name: Run tests
+        run: |
+          docker compose -f docker-test.yml up --build -d
+          docker compose -f docker-test.yml exec backend pytest -v
+    
+      - name: Stop containers
+        run: |
+          docker compose -f docker-test.yml down
+        if: always()
