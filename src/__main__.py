@@ -1,9 +1,12 @@
 import asyncio
+import json
 from io import BytesIO
 import websockets
 from whisper import transcribe
 import numpy as np
-
+from aiohttp import web
+import aiohttp_cors
+import uuid
 # A buffer to hold audio chunks
 audio_chunks = []
 
@@ -24,9 +27,27 @@ async def handler(websocket, path):
         except websockets.ConnectionClosed:
             print("Connection closed")
             break
+async def createRoomUUID(request):
+    roomID = str(uuid.uuid4())
+    return web.Response(
+        text=roomID
+    )
 
 # Start WebSocket server
-start_server = websockets.serve(handler, "127.0.0.1", 3000)
 
+start_server = websockets.serve(handler, "127.0.0.1", 3000)
+app = web.Application()
+app.router.add_get("/createRoomUUID", createRoomUUID)
+cors = aiohttp_cors.setup(app, defaults={
+        "*": aiohttp_cors.ResourceOptions(
+            allow_credentials=True,
+            expose_headers="*",
+            allow_headers="*",
+        )
+    })
+for route in list(app.router.routes()):
+    cors.add(route)
+web.run_app(app)
+print("Backend is up and running on 127.0.0.1:3000")
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
