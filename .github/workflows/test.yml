@@ -18,6 +18,6 @@ jobs:
           docker compose -f docker-test.yml exec backend pytest -v
     
       - name: Stop containers
+        if: always()
         run: |
           docker compose -f docker-test.yml down
-        if: always()
