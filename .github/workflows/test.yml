@@ -15,9 +15,13 @@ jobs:
       - name: Run tests
         run: |
           docker compose -f docker-test.yml up --build -d
+          
+          # Wait until backend container is healthy
+          docker compose -f docker-test.yml ps -q backend | xargs -I {} docker inspect --format '{{.State.Health.Status}}' {} | grep -q healthy
+
           docker compose -f docker-test.yml exec backend pytest -v
     
       - name: Stop containers
+        if: always()
         run: |
           docker compose -f docker-test.yml down
-        if: always()
