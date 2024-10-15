@@ -9,6 +9,7 @@ import aiohttp_cors
 import uuid
 # A buffer to hold audio chunks
 audio_chunks = []
+rooms_list = []
 
 async def handler(websocket, path):
     global audio_chunks
@@ -27,11 +28,18 @@ async def handler(websocket, path):
         except websockets.ConnectionClosed:
             print("Connection closed")
             break
+
+
 async def createRoomUUID(request):
     roomID = str(uuid.uuid4())
-    return web.Response(
-        text=roomID
-    )
+    if roomID not in rooms_list:
+        rooms_list.append(roomID)
+        return web.Response(
+            text=roomID
+        )
+    else:
+        createRoomUUID
+    
 
 # Start WebSocket server
 
