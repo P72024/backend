@@ -10,7 +10,7 @@ WORKDIR /app/
 # Copy all files to the working directory
 COPY . .
 
-RUN mkdir -p /usr/local/cuda
+RUN pip3 install -r ./requirements.txt
 
 # Set environment variable based on the ARG
 ENV mode=$ENV
