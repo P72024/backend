@@ -25,12 +25,6 @@ async def handler(websocket, path):
             print("Connection closed")
             break
 
-    # After the connection is closed, save the collected audio chunks
-    with open("received_audio.webm", "wb") as f:
-        for chunk in audio_chunks:
-            f.write(chunk)
-    print("All chunks written to 'received_audio.webm'")
-
 # Start WebSocket server
 start_server = websockets.serve(handler, "127.0.0.1", 3000)
 
