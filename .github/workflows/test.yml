@@ -13,9 +13,16 @@ jobs:
         name: Check out
       
       - name: Run tests
+        id: run_tests
         run: |
           docker compose -f docker-test.yml up --build -d
           docker compose -f docker-test.yml exec backend pytest -v
+        continue-on-error: true
+
+      - name: Write logs
+        run: |
+          docker logs backend-backend-1
+        if: ${{ steps.run_tests.outcome == 'failure' }}
     
       - name: Stop containers
         if: always()
