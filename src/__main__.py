@@ -61,7 +61,7 @@ async def create_username(sid, _username):
 @sio.on("BE-get-session")
 async def send_session(sid):
     session_data = await sio.get_session(sid)
-    print(f"sid: {sid}, session data: {session_data}")
+    print(f"frotnend requested session data. sending... \nsid: {sid}, session data: {session_data}")
     await sio.emit("FE-session-data", session_data, to=sid)
     
 
