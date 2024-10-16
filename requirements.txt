@@ -3,5 +3,5 @@ aiortc==1.9.0
 opencv-python==4.10.0.84
 faster_whisper
 aiohttp_cors
-websockets
 pytest==8.3.3
+python-socketio==5.11.4
