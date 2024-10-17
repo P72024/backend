@@ -12,12 +12,12 @@ import pprint
 audio_chunks = []
 rooms_list = []
 username = ""
-sio = socketio.AsyncServer(
+socket = socketio.AsyncServer(
     async_mode='aiohttp',
     cors_allowed_origins=['http://localhost:3000']
 )
 app = web.Application()
-sio.attach(app)
+socket.attach(app)
 
 
 # async def handler(websocket, path):
@@ -53,28 +53,33 @@ async def create_room_uuid(request):
     else:
         create_room_uuid()
 
-@sio.on("BE-create-username")
+@socket.on("BE-create-username")
 async def create_username(sid, _username):
-    await sio.save_session(sid, _username)
+    await socket.save_session(sid, _username)
     print(f"{_username} saved for session {sid}")
-    await sio.emit("username-confirmation", f"Username '{_username}' saved", to=sid)
+    await socket.emit("username-confirmation", f"Username '{_username}' saved", to=sid)
 
-@sio.on("BE-get-session")
+
+# TODO: return
+@socket.on("BE-get-session")
 async def send_session(sid):
-    session_data = await sio.get_session(sid)
+    session_data = await socket.get_session(sid)
     print(f"frontend requested session data. sending... \nsid: {sid}, session data: {session_data}")
-    await sio.emit("FE-session-data", session_data, to=sid)
+    await socket.emit("FE-session-data", session_data, to=sid)
     
-@sio.on("BE-enter-room")
+
+@socket.on("BE-enter-room")
 async def enter_room(sid, room_uuid):
-    sio.enter_room(sid, "uuid")
+    print(f"sid: {sid} enter room: {room_uuid}")
+    async with socket.session(sid) as session:
+        session["room_uuid"] = room_uuid["uuid"]
+    await socket.enter_room(sid, room=room_uuid["uuid"])
+    return "OK"
+    
 
-
-@sio.on("BE-receive-audio")
-async def receive_text(sid, data):
-    pprint.pp(data)
-    session_data = await sio.get_session(sid)
-    await sio.emit("FE-receive-audio", data=data, room=session_data["room_uuid"])
+async def send_text(sid, text):
+    session_data = await socket.get_session(sid)
+    await socket.emit("FE-receive-text", data=text, room=session_data["room_uuid"])
                    
 
 cors = aiohttp_cors.setup(app)
