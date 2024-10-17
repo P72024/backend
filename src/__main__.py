@@ -7,6 +7,7 @@ import numpy as np
 from aiohttp import web
 import aiohttp_cors
 import uuid
+import pprint
 # A buffer to hold audio chunks
 audio_chunks = []
 rooms_list = []
@@ -61,9 +62,20 @@ async def create_username(sid, _username):
 @sio.on("BE-get-session")
 async def send_session(sid):
     session_data = await sio.get_session(sid)
-    print(f"frotnend requested session data. sending... \nsid: {sid}, session data: {session_data}")
+    print(f"frontend requested session data. sending... \nsid: {sid}, session data: {session_data}")
     await sio.emit("FE-session-data", session_data, to=sid)
     
+@sio.on("BE-enter-room")
+async def enter_room(sid, room_uuid):
+    sio.enter_room(sid, "uuid")
+
+
+@sio.on("BE-receive-audio")
+async def receive_text(sid, data):
+    pprint.pp(data)
+    session_data = await sio.get_session(sid)
+    await sio.emit("FE-receive-audio", data=data, room=session_data["room_uuid"])
+                   
 
 cors = aiohttp_cors.setup(app)
 resource = cors.add(app.router.add_resource("/createRoomUUID"))
