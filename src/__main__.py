@@ -66,6 +66,7 @@ async def send_session(sid):
     session_data = await socket.get_session(sid)
     print(f"frontend requested session data. sending... \nsid: {sid}, session data: {session_data}")
     await socket.emit("FE-session-data", session_data, to=sid)
+    await send_text(sid, "transcription from whisper")
     
 
 @socket.on("BE-enter-room")
@@ -79,6 +80,7 @@ async def enter_room(sid, room_uuid):
 
 async def send_text(sid, text):
     session_data = await socket.get_session(sid)
+    print("sending text....\n")
     await socket.emit("FE-receive-text", data=text, room=session_data["room_uuid"])
                    
 
