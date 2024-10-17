@@ -1,24 +1,18 @@
 import asyncio
 from io import BytesIO
 import websockets
-from whisper import transcribe
-import numpy as np
 
-# A buffer to hold audio chunks
-audio_chunks = []
+from ASR.ASR import ASR
 
-async def handler(websocket, path):
-    global audio_chunks
+_ASR = ASR("tiny", "auto","int8")
+
+async def handler(websocket):
     while True:
         try:
             # Receiving binary data directly from the client
             data = await websocket.recv()
-
-            audio_chunks.append(data)  # Collect binary data chunks
-            audio_binary_io = BytesIO(b''.join(audio_chunks))
-            # array_data = np.frombuffer(data, dtype=np.int8)  # Check if the data is audio
-            transcribe(audio_binary_io)
-
+            #Handle the audion data with Whisper
+            _ASR.process_audio(data)
             # Optionally, send an acknowledgment back to the client
             await websocket.send("Chunk received")
         except websockets.ConnectionClosed:
