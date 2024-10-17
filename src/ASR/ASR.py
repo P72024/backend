@@ -3,35 +3,31 @@ import re
 from typing import List
 from ASR.LocalAgreement import LocalAgreement
 from faster_whisper import WhisperModel 
+import soundfile as sf
 
 class ASR:
-    audio_buffer: List[BytesIO] = []
+    audio_buffer: BytesIO = BytesIO()
     local_agreement = LocalAgreement()
     context:str = ""
     confirmed_sentences: List[str] = []
     def __init__ (self, model_size: str, device="auto", compute_type = "int8"):
         self.whisper_model = WhisperModel(model_size, device=device, compute_type=compute_type)
         
-
     def transcribe(self, audio_buffer: BytesIO, context: str):
         transcribed_text = ""
         segments, info = self.whisper_model.transcribe(audio_buffer, beam_size=5, vad_filter=True, initial_prompt=context)
-        #print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
-
+        
         for segment in segments:
-            #print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
             transcribed_text += " " + segment.text
             
         return transcribed_text
-
-
-
     
-    def process_audio(self, audio_chunk: BytesIO) -> str:
-        self.audio_buffer.append(audio_chunk)
-        print(len(self.audio_buffer))
-        audio_buffer_joined = BytesIO(b''.join(self.audio_buffer))
-        transcribed_text = self.transcribe(audio_buffer_joined, self.context)
+    def process_audio(self, audio_chunk) -> str:
+        # Append new audio data to the main buffer
+        self.audio_buffer.write(audio_chunk)
+        self.audio_buffer.seek(0)  # Reset buffer's position to the beginning
+        
+        transcribed_text = self.transcribe(self.audio_buffer, self.context)
         print("transcribed_text: " + transcribed_text)
         confirmed_text = self.local_agreement.confirm_tokens(transcribed_text)
         print(confirmed_text)
@@ -49,11 +45,7 @@ class ASR:
             self.context = " ".join(self.confirmed_sentences)
             print("context added: " + self.context)
             
-           
-        
-    
-  
-        
- 
-
-        
+            # Clear the main audio buffer only after processing is complete
+            #self.audio_buffer = BytesIO()
+            
+        return confirmed_text
