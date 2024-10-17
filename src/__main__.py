@@ -20,6 +20,8 @@ app = web.Application()
 socket.attach(app)
 
 
+
+
 # async def handler(websocket, path):
 #     global audio_chunks
 #     while True:
@@ -60,6 +62,14 @@ async def create_username(sid, _username):
     await socket.emit("username-confirmation", f"Username '{_username}' saved", to=sid)
 
 
+@socket.on("BE-send-room-uuid")
+async def send_room_uuid(sid):
+    if not rooms_list:
+        return "no-rooms-available"
+    else: 
+     return rooms_list[0]
+
+
 # TODO: return
 @socket.on("BE-get-session")
 async def send_session(sid):
@@ -77,6 +87,7 @@ async def enter_room(sid, room_uuid):
     await socket.enter_room(sid, room=room_uuid["uuid"])
     return "OK"
     
+
 
 async def send_text(sid, text):
     session_data = await socket.get_session(sid)
