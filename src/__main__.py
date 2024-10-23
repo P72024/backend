@@ -4,11 +4,14 @@ from io import BytesIO
 import socketio
 from whisper import transcribe
 import numpy as np
+from aiortc import RTCPeerConnection, RTCSessionDescription, MediaStreamTrack
+import av
 from aiohttp import web
 import aiohttp_cors
 import uuid
 import pprint
 # A buffer to hold audio chunks
+peerconnections = {}
 audio_chunks = []
 rooms_list = []
 username = ""
@@ -40,7 +43,48 @@ socket.attach(app)
 #             print("Connection closed")
 #             break
 
+class AudioRelayTrack(MediaStreamTrack):
+    """
+    This track relays audio from an incoming audio track to the outgoing track.
+    """
+    kind = "audio"
 
+    def __init__(self, track):
+        super().__init__()  # don't forget this!
+        self.track = track
+
+    async def recv(self):
+        # Receive the next frame of audio from the incoming track
+        frame = await self.track.recv()
+        return frame
+
+@socket.on("BE-send-offer")
+async def send_offer(sid, offer):
+    peerconnections[sid] = RTCPeerConnection()
+
+    # This will store the audio relay track
+    audio_relay_track = None
+
+    pc = peerconnections[sid]
+
+    @pc.on("track")
+    async def on_track(track):
+        if track.kind == "audio":
+            print("Received audio track")
+            # Create a relay track that sends audio to the other connection
+            audio_relay_track = AudioRelayTrack(track)
+            for other_pc_sid, other_pc in peerconnections.items():
+                other_pc.addTrack(audio_relay_track)
+
+    session_description = RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
+    await peerconnections[sid].setRemoteDescription(session_description)
+    answer = await peerconnections[sid].createAnswer()
+    await peerconnections[sid].setLocalDescription(answer)
+    if peerconnections[sid].localDescription is not None:
+        await socket.emit("FE-send-answer", {
+            "sdp": peerconnections[sid].localDescription.sdp,
+            "type": peerconnections[sid].localDescription.type,
+        })
 
 
 async def create_room_uuid(request):
