@@ -41,3 +41,6 @@ class LocalAgreement:
         self.unconfirmed_text = unconfirmed_incoming_text[len(lcs):].strip()
 
         return self.confirmed_text
+    
+    def clear_confirmed_text(self):
+        self.confirmed_text = ""

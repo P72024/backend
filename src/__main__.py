@@ -4,7 +4,7 @@ import websockets
 
 from ASR.ASR import ASR
 
-_ASR = ASR("tiny", "auto","int8")
+_ASR = ASR("tiny", "auto","int8", 150)
 
 async def handler(websocket):
     while True:
