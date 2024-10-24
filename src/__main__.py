@@ -6,7 +6,7 @@ import wave
 from whisper import transcribe
 import numpy as np
 from aiortc import RTCPeerConnection, RTCSessionDescription, MediaStreamTrack, RTCIceCandidate
-from aiortc.contrib.media import MediaRelay
+from aiortc.contrib.media import MediaRelay, MediaBlackhole
 from aiohttp import web
 import aiohttp_cors
 import uuid
@@ -78,24 +78,19 @@ class AudioTrack(MediaStreamTrack):
 async def send_offer(sid, offer):
     peerconnections[sid] = RTCPeerConnection()
     # relayers[sid] = MediaRelay()
-
     @(peerconnections[sid]).on("track")
     async def on_track(track):
         if track.kind == "audio":
             print("Received audio track")
             audio_track = AudioTrack(track)
+            black_hole = MediaBlackhole()
+            black_hole.addTrack(audio_track)
             for pc_sid, pc in peerconnections.items():
                 if pc_sid != sid: 
                     pc.addTrack(audio_track)
                     # print(test)
                     # pc.addTrack(relayers[pc_sid].subscribe(track))
-            i = 0
-            while i < 100:
-                await audio_track.recv()
-                i += 1
-            audio_track.stop()
-            
-            
+            await black_hole.start()
 
     # @(peerconnections[sid]).on("icecandidate")
     # async def on_icecandidate(event):
