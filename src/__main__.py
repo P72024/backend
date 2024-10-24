@@ -2,16 +2,19 @@ import asyncio
 import json
 from io import BytesIO
 import socketio
+import wave
 from whisper import transcribe
 import numpy as np
-from aiortc import RTCPeerConnection, RTCSessionDescription, MediaStreamTrack
-import av
+from aiortc import RTCPeerConnection, RTCSessionDescription, MediaStreamTrack, RTCIceCandidate
+from aiortc.contrib.media import MediaRelay
 from aiohttp import web
 import aiohttp_cors
 import uuid
+import time
 import pprint
 # A buffer to hold audio chunks
 peerconnections = {}
+relayers = {}
 audio_chunks = []
 rooms_list = []
 username = ""
@@ -43,38 +46,66 @@ socket.attach(app)
 #             print("Connection closed")
 #             break
 
-class AudioRelayTrack(MediaStreamTrack):
+class AudioTrack(MediaStreamTrack):
     """
-    This track relays audio from an incoming audio track to the outgoing track.
+    A media stream track that records audio to a file.
     """
     kind = "audio"
 
     def __init__(self, track):
-        super().__init__()  # don't forget this!
+        super().__init__()
         self.track = track
+        self.audio_file = wave.open("recorded_audio.wav", "wb")
+        self.audio_file.setnchannels(1)  # mono
+        self.audio_file.setsampwidth(4)  # 16-bit audio
+        self.audio_file.setframerate(48000)  # 48kHz
 
     async def recv(self):
-        # Receive the next frame of audio from the incoming track
+        print("recv")
         frame = await self.track.recv()
+        # Convert frame to bytes
+        audio_data = frame.to_ndarray().tobytes()
+        # Write audio data to file
+        self.audio_file.writeframes(audio_data)
         return frame
+
+    def stop(self):
+        print("stop")
+        self.audio_file.close()
+        super().stop()
 
 @socket.on("BE-send-offer")
 async def send_offer(sid, offer):
     peerconnections[sid] = RTCPeerConnection()
+    # relayers[sid] = MediaRelay()
 
-    # This will store the audio relay track
-    audio_relay_track = None
-
-    pc = peerconnections[sid]
-
-    @pc.on("track")
+    @(peerconnections[sid]).on("track")
     async def on_track(track):
         if track.kind == "audio":
             print("Received audio track")
-            # Create a relay track that sends audio to the other connection
-            audio_relay_track = AudioRelayTrack(track)
-            for other_pc_sid, other_pc in peerconnections.items():
-                other_pc.addTrack(audio_relay_track)
+            audio_track = AudioTrack(track)
+            for pc_sid, pc in peerconnections.items():
+                if pc_sid != sid: 
+                    pc.addTrack(audio_track)
+                    # print(test)
+                    # pc.addTrack(relayers[pc_sid].subscribe(track))
+            i = 0
+            while i < 100:
+                await audio_track.recv()
+                i += 1
+            audio_track.stop()
+            
+            
+
+    # @(peerconnections[sid]).on("icecandidate")
+    # async def on_icecandidate(event):
+    #     candidate = event.candidate
+    #     print(candidate)
+    #     if candidate:
+    #         await socket.emit("FE-new-ice-candidate", {
+    #             "candidate": candidate
+    #         })
+                    
 
     session_description = RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
     await peerconnections[sid].setRemoteDescription(session_description)
@@ -86,6 +117,30 @@ async def send_offer(sid, offer):
             "type": peerconnections[sid].localDescription.type,
         })
 
+# @socket.on("BE-new-ice-candidate")
+# async def new_ice_candidate(sid, candidate):
+#     new_candidate = json.loads(candidate["candidate"])
+#     ip = new_candidate['candidate'].split(' ')[4]
+#     port = new_candidate['candidate'].split(' ')[5]
+#     protocol = new_candidate['candidate'].split(' ')[2]
+#     priority = new_candidate['candidate'].split(' ')[3]
+#     foundation = new_candidate['candidate'].split(' ')[0].split(":")[1]
+#     component = new_candidate['candidate'].split(' ')[1]
+#     type = new_candidate['candidate'].split(' ')[7]
+#     rtc_candidate = RTCIceCandidate(
+#             ip=ip,
+#             port=port,
+#             protocol=protocol,
+#             priority=priority,
+#             foundation=foundation,
+#             component=component,
+#             type=type,
+#             sdpMid=new_candidate['sdpMid'],
+#             sdpMLineIndex=new_candidate['sdpMLineIndex']
+#         )
+#     await peerconnections[sid].addIceCandidate(rtc_candidate)
+    # print("Added ICE candidate")
+    # print(peerconnections[sid].iceGatheringState )
 
 async def create_room_uuid(request):
     print("received request for create_room_uuid")
