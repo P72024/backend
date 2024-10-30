@@ -1,6 +1,7 @@
 import asyncio
 import json
 from io import BytesIO
+from faster_whisper import WhisperModel
 import socketio
 import wave
 from whisper import transcribe
@@ -12,6 +13,11 @@ import aiohttp_cors
 import uuid
 import time
 import pprint
+import threading
+import librosa
+import soundfile
+
+from ASR.ASR import ASR
 # A buffer to hold audio chunks
 peerconnections = {}
 relayers = {}
@@ -25,8 +31,7 @@ socket = socketio.AsyncServer(
 app = web.Application()
 socket.attach(app)
 
-
-
+_ASR = ASR("base", device="cpu", compute_type="int8")
 
 # async def handler(websocket, path):
 #     global audio_chunks
@@ -55,18 +60,35 @@ class AudioTrack(MediaStreamTrack):
     def __init__(self, track):
         super().__init__()
         self.track = track
-        self.audio_file = wave.open("recorded_audio.wav", "wb")
+        self.audio_file = wave.open("temp.wav", "wb")
         self.audio_file.setnchannels(1)  # mono
-        self.audio_file.setsampwidth(4)  # 16-bit audio
-        self.audio_file.setframerate(48000)  # 48kHz
+        self.audio_file.setsampwidth(4)  # 32-bit audio
+        self.audio_file.setframerate(16000)  # 48kHz
 
     async def recv(self):
-        print("recv")
+        #print("recv")
         frame = await self.track.recv()
+
+        converted_audio_data = frame.to_ndarray().astype(np.float32)
+
+        resampled_audio = librosa.resample(converted_audio_data, orig_sr=48000, target_sr=16000)
+
+        max_val = np.max(np.abs(resampled_audio))
+        if max_val > 1.0:
+            audio_resampled_normalized = resampled_audio / max_val
+        else:
+            audio_resampled_normalized = resampled_audio
+
+        self.audio_file.writeframes(audio_resampled_normalized.tobytes())
+
         # Convert frame to bytes
-        audio_data = frame.to_ndarray().tobytes()
-        # Write audio data to file
-        self.audio_file.writeframes(audio_data)
+        #audio_data = frame.to_ndarray().tobytes()
+
+        #converted_audio_data = frame.to_ndarray().astype(np.float32)
+        #converted_audio_data /= 32768.0
+
+        #self.audio_file.writeframes(audio_data)
+        #_ASR.process_audio(resampled_audio)
         return frame
 
     def stop(self):
@@ -200,5 +222,19 @@ cors.add(resource.add_route("GET", create_room_uuid), {
 })
 
 
+#transcription_thread = threading.Thread(target=_ASR.start)
+
+whisper_model = WhisperModel("base", device="cpu", compute_type="float32")
+
 if __name__ == "__main__":
+    #transcription_thread.start()
+
     web.run_app(app, port=8080, host="localhost")
+
+    #audio, _ = librosa.load("record.wav", sr=16000, dtype=np.float32)
+
+    #print(audio)
+
+    #_ASR.process_audio(audio)
+
+    #transcription_thread.join()
