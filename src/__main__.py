@@ -1,10 +1,10 @@
 import asyncio
 from io import BytesIO
-import websockets
 
+import websockets
 from ASR.ASR import ASR
 
-_ASR = ASR("tiny", "auto","int8", 150)
+_ASR = ASR("small", "auto","int8", 1200)
 
 
 async def handler(websocket):
@@ -17,7 +17,8 @@ async def handler(websocket):
 
             if has_received_first_byte:
             #Handle the audion data with Whisper
-                _ASR.recieve_audio_chunk(data)
+                
+                _ASR.receive_audio_chunk(data)
             else: 
                 has_received_first_byte = True
                 _ASR.save_metadata(data)

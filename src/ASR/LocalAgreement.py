@@ -29,6 +29,7 @@ class LocalAgreement:
 
         # Find the longest common sequence between the new unconfirmed incoming text and the unconfirmed text
         lcs = self.longest_common_sequence(unconfirmed_incoming_text, self.unconfirmed_text)
+        print(f"LCS: {lcs}")
 
         # Update the confirmed text by appending the longest common sequence found
         if lcs:
