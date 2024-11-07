@@ -6,17 +6,16 @@ from typing import List
 
 import numpy as np
 import soundfile as sf
+from ASR.LocalAgreement import LocalAgreement
 from faster_whisper import WhisperModel
 from pydub import AudioSegment
-
-from ASR.LocalAgreement import LocalAgreement
 
 
 class ASR:
     max_context_length = 200
     metadata: BytesIO = BytesIO()
     audio_buffer: List[BytesIO] = []
-    silence_threshold: np.float64 = np.float64(0.040)
+    silence_threshold: np.float64 = np.float64(0.05)
     local_agreement = LocalAgreement()
     context:str = ""
     confirmed_sentences: List[str] = []
@@ -66,6 +65,7 @@ class ASR:
         combined_bytes = self.metadata.getvalue() + b''.join(bio.getvalue() for bio in self.audio_buffer)
         combined_bytes_io = BytesIO(combined_bytes)
         if(self.is_silent(combined_bytes_io)):
+            print("Silence detected!")
             self.audio_buffer.clear()
             return ""
         combined_bytes_io.seek(0)  # Reset for reading
@@ -133,39 +133,24 @@ class ASR:
     
     
     def is_silent(self, audio_bytes: BytesIO) -> bool:
-        """Check if the audio chunk is silent based on RMS energy.
-        
-        Args:
-            audio_bytes (BytesIO): Audio data in WebM format
-        
-        Returns:
-            bool: True if the audio chunk is considered silent
-        """
-        # Reset buffer position
+        """Check if the audio chunk is silent based on RMS energy."""
+        # Reset buffer and read audio data
+
+        audio = AudioSegment.from_file(audio_bytes, format='webm', codec='opus')
+        ogg_audio = BytesIO()
+        audio.export(ogg_audio, format='ogg')
+        audio_bytes = ogg_audio
         audio_bytes.seek(0)
-        
-        # Load WebM audio using pydub
-        audio = AudioSegment.from_file(audio_bytes, format="webm")
-        
-        # Convert audio to raw numpy array
-        # Get audio data as an array of samples
-        samples = np.array(audio.get_array_of_samples())
-        
-        # If audio is stereo, convert to mono by averaging channels
-        if audio.channels == 2:
-            samples = samples.reshape((-1, 2)).mean(axis=1)
-        
+        audio_data, sample_rate = sf.read(audio_bytes)
+
         # Calculate RMS energy
-        rms_energy = np.sqrt(np.mean(np.square(samples)))
+        rms_energy = np.sqrt(np.mean(np.square(audio_data)))
         
-        # Normalize RMS energy based on audio parameters
-        # pydub uses different scaling than soundfile, so we adjust the threshold
-        normalized_rms = rms_energy / (1 << (audio.sample_width * 8 - 1))
-        
-        # print(f"[NORMALIZED RMS ENERGY] {normalized_rms}")
+        print(f"[RMS ENERGY] {rms_energy}")
         
         # Check if energy is below the silence threshold
-        return normalized_rms < self.silence_threshold
+        return rms_energy < self.silence_threshold
+
     def merge_sentences(self, unfinished: str, completed: str) -> str:
         """Merge unfinished and completed transcriptions by removing overlapping words and handling capitalization."""
         
