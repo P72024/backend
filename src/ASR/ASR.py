@@ -94,47 +94,6 @@ class ASR:
         self.audio_buffer.clear() 
         return transcribed_text
 
-    def trim_silence_if_there(self, audio_bytes: BytesIO) -> BytesIO:
-        """
-        Trims any leading or trailing silence from the given audio BytesIO.
-        
-        Parameters:
-        audio_bytes (io.BytesIO): The audio data to be trimmed.
-        
-        Returns:
-        io.BytesIO: The trimmed audio data.
-        """
-        # Load the audio data into a pydub.AudioSegment
-        audio = AudioSegment.from_file(audio_bytes, format='webm', codec='opus')
-        
-        # Detect leading and trailing silence
-        start_trim = self.detect_leading_silence(audio)
-        end_trim = self.detect_trailing_silence(audio)
-        
-        # Trim the silence
-        trimmed_audio = audio[start_trim:len(audio) - end_trim]
-        
-        # Export the trimmed audio back to a BytesIO
-        trimmed_bytes = BytesIO()
-        trimmed_audio.export(trimmed_bytes, format='ogg')
-        trimmed_bytes.seek(0)
-        
-        return trimmed_bytes
-
-    def detect_leading_silence(self, audio: AudioSegment, silence_threshold=-50.0, chunk_size=10):
-        """Determine the início of leading silence."""
-        trim = 0
-        while audio[trim:trim + chunk_size].dBFS < silence_threshold and trim < len(audio):
-            trim += chunk_size
-        return trim
-
-    def detect_trailing_silence(self, audio: AudioSegment, silence_threshold=-50.0, chunk_size=10):
-        """Determine the end of trailing silence."""
-        trim = len(audio) - 1
-        while audio[trim - chunk_size:trim].dBFS < silence_threshold and trim > 0:
-            trim -= chunk_size
-        return len(audio) - trim
-
     def confirm_text(self, transcribed_text: str) -> str:
         # Split the current and previous transcription into words
         new_words = transcribed_text.split()
@@ -174,15 +133,17 @@ class ASR:
         # print(f"Updated Context (Shingle): {self.context}")
     
     
-    def is_silent(self, audio_bytes: BytesIO) -> bool:
-        """Check if the audio chunk is silent based on RMS energy."""
-        # Reset buffer and read audio data
-
+    def convert_audio(self, audio_bytes: BytesIO) -> BytesIO:
         audio = AudioSegment.from_file(audio_bytes, format='webm', codec='opus')
         ogg_audio = BytesIO()
         audio.export(ogg_audio, format='ogg')
         audio_bytes = ogg_audio
         audio_bytes.seek(0)
+
+    def is_silent(self, audio_bytes: BytesIO) -> bool:
+        """Check if the audio chunk is silent based on RMS energy."""
+        # Reset buffer and read audio data
+        audio_bytes = self.convert_audio(audio_bytes)
         audio_data, sample_rate = sf.read(audio_bytes)
 
         # Calculate RMS energy
