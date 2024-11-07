@@ -41,7 +41,7 @@ class ASR:
         audio_buffer.seek(0)
         
         transcribed_text = ""
-        segments, info = self.whisper_model.transcribe(audio_buffer, language='en', beam_size=12, initial_prompt=context, condition_on_previous_text=True)
+        segments, info = self.whisper_model.transcribe(audio_buffer, language='en', beam_size=12, initial_prompt=context, condition_on_previous_text=True, vad_filter=True, vad_parameters={"threshold": 0.6, "min_silence_duration_ms": 300})
         
         for segment in segments:
             transcribed_text += " " + segment.text
@@ -70,7 +70,6 @@ class ASR:
             self.audio_buffer.clear()
             return ""
         combined_bytes_io.seek(0)  # Reset for reading
-        combined_bytes_io = self.trim_silence_if_there(combined_bytes_io)
         transcribed_text = self.transcribe(combined_bytes_io, self.context)
         if "..." in transcribed_text or '- ' in transcribed_text:
             self.unfinished_sentence = transcribed_text.replace("...", "")  # Remove trailing ellipsis
@@ -133,17 +132,15 @@ class ASR:
         # print(f"Updated Context (Shingle): {self.context}")
     
     
-    def convert_audio(self, audio_bytes: BytesIO) -> BytesIO:
+    def is_silent(self, audio_bytes: BytesIO) -> bool:
+        """Check if the audio chunk is silent based on RMS energy."""
+        # Reset buffer and read audio data
+
         audio = AudioSegment.from_file(audio_bytes, format='webm', codec='opus')
         ogg_audio = BytesIO()
         audio.export(ogg_audio, format='ogg')
         audio_bytes = ogg_audio
         audio_bytes.seek(0)
-
-    def is_silent(self, audio_bytes: BytesIO) -> bool:
-        """Check if the audio chunk is silent based on RMS energy."""
-        # Reset buffer and read audio data
-        audio_bytes = self.convert_audio(audio_bytes)
         audio_data, sample_rate = sf.read(audio_bytes)
 
         # Calculate RMS energy
