@@ -1,7 +1,6 @@
 import asyncio
 from io import BytesIO
 
-import ffmpeg
 import websockets
 from ASR.ASR import ASR
 
@@ -9,6 +8,7 @@ _ASR = ASR("small", "auto","int8", 1200)
 
 
 async def handler(websocket):
+    print("[BACKEND] Connection Established")
     has_received_first_byte = False
 
     while True:
@@ -31,6 +31,6 @@ async def handler(websocket):
 
 # Start WebSocket server
 start_server = websockets.serve(handler, "127.0.0.1", 3000)
-
+print("[BACKEND] READY!")
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()

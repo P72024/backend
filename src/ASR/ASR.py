@@ -15,11 +15,11 @@ class ASR:
     max_context_length = 200
     metadata: BytesIO = BytesIO()
     audio_buffer: List[BytesIO] = []
-    silence_threshold: np.float64 = np.float64(0.05)
+    silence_threshold: np.float64 = np.float64(0.042)
     local_agreement = LocalAgreement()
     context:str = ""
     confirmed_sentences: List[str] = []
-    min_chunk_size = 6
+    min_chunk_size = 48
     unfinished_sentence = None
     min_silence_duration_ms = 300  # Minimum duration of silence to consider it as non-speech
     previous_buffer = BytesIO()
