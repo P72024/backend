@@ -6,31 +6,36 @@ from ASR.ASR import ASR
 
 _ASR = ASR("small", "auto","int8", 1200)
 
+connected_clients = set()
+
+
 
 async def handler(websocket):
-    print("[BACKEND] Connection Established")
     has_received_first_byte = False
-
-    while True:
-        try:
-            # Receiving binary data directly from the client
-            data = await websocket.recv()
+    print("[BACKEND] New client connected!")
+    connected_clients.add(websocket)
+    try:
+        async for message in websocket:
+            transcribed_text = ''
 
             if has_received_first_byte:
-            #Handle the audion data with Whisper
-                _ASR.receive_audio_chunk(data)
-            else: 
+                transcribed_text = _ASR.receive_audio_chunk(message)
+            else:
+                _ASR.save_metadata(message)
                 has_received_first_byte = True
-                _ASR.save_metadata(data)
 
-            # Optionally, send an acknowledgment back to the client
-            await websocket.send("Chunk received")
-        except websockets.ConnectionClosed:
-            print("Connection closed")
-            break
+            if transcribed_text != '':
+                await websocket.send("transcribed_text: " + transcribed_text)
+    except websockets.ConnectionClosed:
+        print(f"Client disconnected")
+    finally:
+        # Remove the client from the set when it disconnects
+        connected_clients.remove(websocket)
 
-# Start WebSocket server
-start_server = websockets.serve(handler, "127.0.0.1", 3000)
-print("[BACKEND] READY!")
-asyncio.get_event_loop().run_until_complete(start_server)
-asyncio.get_event_loop().run_forever()
+async def main():
+    async with websockets.serve(handler, "localhost", 3000):
+        print("[BACKEND] READY!")
+        await asyncio.Future()  # Run forever
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -20,7 +20,7 @@ class ASR:
     local_agreement = LocalAgreement()
     context:str = ""
     confirmed_sentences: List[str] = []
-    min_chunk_size = 48
+    min_chunk_size = 3
     unfinished_sentence = None
     min_silence_duration_ms = 300  # Minimum duration of silence to consider it as non-speech
     previous_buffer = BytesIO()
@@ -31,17 +31,8 @@ class ASR:
         self.max_context_length = max_context_length
         
     def transcribe(self, audio_buffer: BytesIO, context: str):
-        # print(audio_buffer.getbuffer().nbytes)
-
-        audio_buffer.seek(0)
-        # a lil debug tang
-        with open("temp.webm", 'wb') as f:
-            f.write(audio_buffer.getvalue())
-
-        audio_buffer.seek(0)
-        
         transcribed_text = ""
-        segments, info = self.whisper_model.transcribe(audio_buffer, language='en', beam_size=12, initial_prompt=context, condition_on_previous_text=True, vad_filter=True, vad_parameters={"threshold": 0.6, "min_silence_duration_ms": 300})
+        segments, info = self.whisper_model.transcribe(audio_buffer, language='en', beam_size=5, vad_filter=True, vad_parameters={'threshold': 0.6, 'min_silence_duration_ms': 300})
         
         for segment in segments:
             transcribed_text += " " + segment.text
@@ -54,40 +45,23 @@ class ASR:
         self.metadata.seek(0)  # Reset buffer's position to the beginning
 
     def receive_audio_chunk(self, audio_chunk):
+        transcribed_text = ''
         # print("recieving audio chunk")
         self.audio_buffer.append(BytesIO(audio_chunk))
 
         # print("audio buffer length: ", len(self.audio_buffer))
         # print("min chunk size: ", self.min_chunk_size)
         if len(self.audio_buffer) > self.min_chunk_size:
-            self.process_audio()
+            transcribed_text = self.process_audio()
+
+        return transcribed_text
     
     def process_audio(self) -> str:
         combined_bytes = self.metadata.getvalue() + b''.join(bio.getvalue() for bio in self.audio_buffer)
         combined_bytes_io = BytesIO(combined_bytes)
-        if(self.is_silent(combined_bytes_io)):
-            print("Silence detected!")
-            self.audio_buffer.clear()
-            return ""
-        combined_bytes_io.seek(0)  # Reset for reading
-        transcribed_text = self.transcribe(combined_bytes_io, self.context)
-        if "..." in transcribed_text or '- ' in transcribed_text:
-            self.unfinished_sentence = transcribed_text.replace("...", "")  # Remove trailing ellipsis
-            self.unfinished_sentence = transcribed_text.replace("- ", "")
-            # print('missing end of sentence')
-            return ""
         
-        # If there was an unfinished sentence, merge it with the new transcription
-        if self.unfinished_sentence:
-            # print(f"Merging sentences:\n1. '{transcribed_text}'\n2. '{self.unfinished_sentence}'")
-            # transcribed_text = self.merge_sentences(self.unfinished_sentence, transcribed_text)
-            transcribed_text = transcribed_text
-            self.unfinished_sentence = None  # Reset unfinished sentence
-        transcribed_text = transcribed_text.lstrip()
-        confirmed_text = self.confirm_text(transcribed_text)
-        # print(f"[CONFIRMED TRANSCRIPTION] {confirmed_text}")
-        print(f"[TRANSCRIPTION] {transcribed_text}")
-        self.update_context(transcribed_text)
+        transcribed_text = self.transcribe(combined_bytes_io, self.context)
+        print(transcribed_text)
     
         # Clear audio buffer after processing to avoid duplicating input
         self.audio_buffer.clear() 
