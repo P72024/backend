@@ -1,53 +1,64 @@
 import asyncio
 from io import BytesIO
 import json
-
 import numpy as np
 import websockets
-
 from ASR.ASR import ASR
 
-_ASR = ASR("small", "auto","int8", 1200)
+# Initialize the ASR model
+_ASR = ASR("small", "auto", "int8", 1200)
 
+# Store connected clients
 connected_clients = set()
 
+# Queue for managing audio chunks from clients
+audio_queue = asyncio.Queue()
+
+async def process_audio_chunks():
+    has_recieved_first_byte = False
+    while True:
+        # Process each chunk in the queue one at a time
+        client_id, audio_data = await audio_queue.get()
+
+        if not has_recieved_first_byte:
+            _ASR.save_metadata(audio_data)
+            has_recieved_first_byte = True
+            continue
+
+        transcribed_text = _ASR.receive_audio_chunk(audio_data)
+
+        if transcribed_text:
+            print(f"[BACKEND] Transcribed for client {client_id}: {transcribed_text}")
+            
+            # Send the transcribed text to all connected clients
+            for client in connected_clients:
+                await client.send(transcribed_text)
+                
 async def handler(websocket):
     print("[BACKEND] New client connected!")
-
-    has_received_first_byte = False
     connected_clients.add(websocket)
-
+    
     try:
         async for message in websocket:
-            transcribed_text = ''
-
+            # Parse incoming message
             data = json.loads(message)
-
             client_id = data.get('clientId')
-            audio_data = data.get('audioData')
-            audio_data = bytes(audio_data)
+            audio_data = bytes(data.get('audioData'))
+            
+            # Add audio chunk to the queue for processing
+            await audio_queue.put((client_id, audio_data))
 
-            print("client_id: ", client_id)
-
-            if has_received_first_byte:
-                transcribed_text = _ASR.receive_audio_chunk(audio_data)
-            else:
-                _ASR.save_metadata(audio_data)
-                has_received_first_byte = True
-
-            if transcribed_text != '':
-                for client in connected_clients:
-                    print(transcribed_text)
-                    await client.send(transcribed_text)
     except websockets.ConnectionClosed:
-        print(f"Client disconnected")
+        print(f"[BACKEND] Client disconnected.")
     finally:
         connected_clients.remove(websocket)
 
 async def main():
-    async with websockets.serve(handler, "localhost", 3000) as server:
+    # Start the websocket server
+    async with websockets.serve(handler, "localhost", 3000):
         print("[BACKEND] READY!")
-        await server.serve_forever()
+        
+        await process_audio_chunks()
 
 if __name__ == "__main__":
     asyncio.run(main())
