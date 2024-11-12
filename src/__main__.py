@@ -15,14 +15,14 @@ connected_clients = set()
 audio_queue = asyncio.Queue()
 
 async def process_audio_chunks():
-    has_recieved_first_byte = False
+    has_recieved_first_audio_chunk = False
     while True:
         # Process each chunk in the queue one at a time
         client_id, audio_data = await audio_queue.get()
 
-        if not has_recieved_first_byte:
+        if not has_recieved_first_audio_chunk:
             _ASR.save_metadata(audio_data)
-            has_recieved_first_byte = True
+            has_recieved_first_audio_chunk = True
             continue
 
         transcribed_text = _ASR.receive_audio_chunk(audio_data)
@@ -32,8 +32,12 @@ async def process_audio_chunks():
             
             # Send the transcribed text to all connected clients
             for client in connected_clients:
-                await client.send(transcribed_text)
-                
+                try:
+                    await client.send(transcribed_text)
+                except websockets.ConnectionClosed:
+                    print(f"[BACKEND] Client disconnect unexpected.")
+                    connected_clients.remove(client)
+
 async def handler(websocket):
     print("[BACKEND] New client connected!")
     connected_clients.add(websocket)
@@ -51,6 +55,7 @@ async def handler(websocket):
     except websockets.ConnectionClosed:
         print(f"[BACKEND] Client disconnected.")
     finally:
+        print(f"[BACKEND] Client disconnected.")
         connected_clients.remove(websocket)
 
 async def main():

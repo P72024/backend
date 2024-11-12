@@ -32,7 +32,7 @@ class ASR:
         
     def transcribe(self, audio_buffer: BytesIO, context: str):
         transcribed_text = ""
-        segments, info = self.whisper_model.transcribe(audio_buffer, language='en', beam_size=5, vad_filter=True, vad_parameters={'threshold': 0.6, 'min_silence_duration_ms': 300})
+        segments, info = self.whisper_model.transcribe(audio_buffer, language='en', beam_size=5, vad_filter=True)
         
         for segment in segments:
             transcribed_text += " " + segment.text
