@@ -2,19 +2,21 @@ import asyncio
 from io import BytesIO
 import json
 
+import numpy as np
 import websockets
+
 from ASR.ASR import ASR
 
 _ASR = ASR("small", "auto","int8", 1200)
 
 connected_clients = set()
 
-
-
 async def handler(websocket):
-    has_received_first_byte = False
     print("[BACKEND] New client connected!")
+
+    has_received_first_byte = False
     connected_clients.add(websocket)
+
     try:
         async for message in websocket:
             transcribed_text = ''
@@ -34,18 +36,18 @@ async def handler(websocket):
                 has_received_first_byte = True
 
             if transcribed_text != '':
-                print("sending to client: ", client_id)
-                await websocket.send(transcribed_text)
+                for client in connected_clients:
+                    print(transcribed_text)
+                    await client.send(transcribed_text)
     except websockets.ConnectionClosed:
         print(f"Client disconnected")
     finally:
-        # Remove the client from the set when it disconnects
         connected_clients.remove(websocket)
 
 async def main():
-    async with websockets.serve(handler, "localhost", 3000):
+    async with websockets.serve(handler, "localhost", 3000) as server:
         print("[BACKEND] READY!")
-        await asyncio.Future()  # Run forever
+        await server.serve_forever()
 
 if __name__ == "__main__":
     asyncio.run(main())
