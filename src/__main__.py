@@ -1,6 +1,8 @@
 import asyncio
-from io import BytesIO
 import json
+import os
+import pickle
+from io import BytesIO
 
 import websockets
 from ASR.ASR import ASR
@@ -25,13 +27,16 @@ async def handler(websocket):
             audio_data = data.get('audioData')
             audio_data = bytes(audio_data)
 
-            print("client_id: ", client_id)
+            # print("client_id: ", client_id)
 
             if has_received_first_byte:
-                transcribed_text = _ASR.receive_audio_chunk(audio_data)
-            else:
-                _ASR.save_metadata(audio_data)
+            #Handle the audion data with Whisper
+                _ASR.receive_audio_chunk(audio_data)
+                await save_chunk(audio_data)
+            else: 
                 has_received_first_byte = True
+                await save_metadata(audio_data)
+                _ASR.save_metadata(audio_data)
 
             if transcribed_text != '':
                 print("sending to client: ", client_id)
@@ -42,10 +47,32 @@ async def handler(websocket):
         # Remove the client from the set when it disconnects
         connected_clients.remove(websocket)
 
-async def main():
-    async with websockets.serve(handler, "localhost", 3000):
-        print("[BACKEND] READY!")
-        await asyncio.Future()  # Run forever
+async def save_chunk(data):
+    # Check if file exists, and initialize it if not
+    if os.path.exists('../benchmarking/testfiles/frederik.pkl'):
+        with open('../benchmarking/testfiles/frederik.pkl', 'rb') as f:
+            array = pickle.load(f)
+    else:
+        array = []
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    # Append the new data and save back
+    array.append(data)
+    with open('../benchmarking/testfiles/frederik.pkl', 'wb') as f:
+        pickle.dump(array, f)
+
+async def save_metadata(data):
+    # Check if file exists, and initialize it if not
+    if os.path.exists('../benchmarking/testfiles/frederik_meta.pkl'):
+        with open('../benchmarking/testfiles/frederik_meta.pkl', 'rb') as f:
+            array = pickle.load(f)
+    else:
+        array = []
+
+    # Append the new data and save back
+    array.append(data)
+    with open('../benchmarking/testfiles/frederik_meta.pkl', 'wb') as f:
+        pickle.dump(array, f)# Start WebSocket server
+start_server = websockets.serve(handler, "127.0.0.1", 3000)
+print("[BACKEND] READY!")
+asyncio.get_event_loop().run_until_complete(start_server)
+asyncio.get_event_loop().run_forever()
