@@ -1,6 +1,8 @@
 import asyncio
-from io import BytesIO
 import json
+import os
+import pickle
+from io import BytesIO
 import numpy as np
 import websockets
 from ASR.ASR import ASR
@@ -73,6 +75,37 @@ async def handler(websocket):
         connected_clients.remove(websocket)
         rooms[room_id].remove((client_id, websocket))
         print(rooms)
+
+async def save_chunk(data):
+    # Check if file exists, and initialize it if not
+    if os.path.exists('../benchmarking/testfiles/frederik.pkl'):
+        with open('../benchmarking/testfiles/frederik.pkl', 'rb') as f:
+            array = pickle.load(f)
+    else:
+        array = []
+
+    # Append the new data and save back
+    array.append(data)
+    with open('../benchmarking/testfiles/frederik.pkl', 'wb') as f:
+        pickle.dump(array, f)
+
+async def save_metadata(data):
+    # Check if file exists, and initialize it if not
+    if os.path.exists('../benchmarking/testfiles/frederik_meta.pkl'):
+        with open('../benchmarking/testfiles/frederik_meta.pkl', 'rb') as f:
+            array = pickle.load(f)
+    else:
+        array = []
+
+    # Append the new data and save back
+    array.append(data)
+    with open('../benchmarking/testfiles/frederik_meta.pkl', 'wb') as f:
+        pickle.dump(array, f)# Start WebSocket server
+        
+start_server = websockets.serve(handler, "127.0.0.1", 3000)
+print("[BACKEND] READY!")
+asyncio.get_event_loop().run_until_complete(start_server)
+asyncio.get_event_loop().run_forever()
 
 async def main():
     # Start the websocket server
