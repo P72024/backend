@@ -68,6 +68,7 @@ class ASR:
     def process_audio(self) -> str:
         combined_bytes = self.metadata.getvalue() + b''.join(bio.getvalue() for bio in self.audio_buffer)
         combined_bytes_io = BytesIO(combined_bytes)
+
         if(self.is_silent(combined_bytes_io)):
             print("Silence detected!")
             self.audio_buffer.clear()
@@ -93,7 +94,7 @@ class ASR:
         self.update_context(transcribed_text)
     
         # Clear audio buffer after processing to avoid duplicating input
-        self.audio_buffer.clear() 
+        self.audio_buffer.clear()
         return transcribed_text
 
     def confirm_text(self, transcribed_text: str) -> str:
