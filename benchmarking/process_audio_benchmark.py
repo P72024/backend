@@ -17,7 +17,7 @@ from ASR.ASR import ASR
 sr = 16000
 
 async def process_audio_benchmark(chunks_pkl, meta_pkl, txt_filename, size):
-    asr = ASR(model_size=size, device="auto", compute_type="float32")
+    asr = ASR(model_size=size, device="auto", compute_type="float32", max_context_length=80)
     try:
         transcribed_text = ""
         actual_text = ""
@@ -31,9 +31,10 @@ async def process_audio_benchmark(chunks_pkl, meta_pkl, txt_filename, size):
         for chunk in chunks:
             start_total_time = time.time()
             newText = asr.receive_audio_chunk(chunk)
-            while newText.endswith('…'):
-                newText = newText[:-1]
-            transcribed_text += " " +  newText
+            if newText is not None:
+                while newText.endswith('…'):
+                    newText = newText[:-1]
+                transcribed_text += " " +  newText
             times.append(time.time() - start_total_time)
         #End timer
         #total time elapsed
@@ -68,7 +69,7 @@ async def process_audio_benchmark(chunks_pkl, meta_pkl, txt_filename, size):
         print(f"The actual text is:\n{actual_text}")
         print(f'\n\nThe Transcribed text was:\n{finaltext}')
         wer = jiwer.wer(actual_text, transcribed_text, truth_transform=transforms, hypothesis_transform=transforms)
-        print(f"    WER: {wer} between {txt_filename} and test")
+        print(f"    WER: {wer * 100:.1f}% between {txt_filename} and test")
         print(f"    Total time using process_audio on test: {total_time} seconds")
         # print(f"    Average time pr. chunk: {average_time_per_chunk} seconds, chunk size: {chunk_size}")
     except Exception as e:
