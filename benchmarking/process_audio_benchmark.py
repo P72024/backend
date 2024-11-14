@@ -5,11 +5,8 @@ import time
 from io import BytesIO
 
 import jiwer
-import librosa
 import numpy as np
-from aiortc.contrib.media import MediaPlayer
 from prettytable import PrettyTable
-from pydub import AudioSegment
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 from ASR.ASR import ASR
