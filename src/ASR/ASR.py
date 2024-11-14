@@ -1,15 +1,17 @@
-
 import re
 import wave
 from asyncio import sleep
 from io import BytesIO
+from math import ceil
 from typing import List
 
 import numpy as np
 import soundfile as sf
-from ASR.LocalAgreement import LocalAgreement
 from faster_whisper import WhisperModel
+from numpy._core.multiarray import empty
 from pydub import AudioSegment
+
+from ASR.LocalAgreement import LocalAgreement
 
 
 class ASR:
@@ -26,8 +28,9 @@ class ASR:
     previous_buffer = BytesIO()
     previous_transcription = ""
 
-    def __init__ (self, model_size: str, device="auto", compute_type = "float16", max_context_length=200):
+    def __init__ (self, model_size: str, device="auto", compute_type = "float16", max_context_length=200, chunk_limit=48):
         self.whisper_model = WhisperModel(model_size, device=device, compute_type=compute_type)
+        self.min_chunk_size = chunk_limit
         self.max_context_length = max_context_length
         
     def transcribe(self, audio_buffer: BytesIO, context: str):
@@ -41,7 +44,13 @@ class ASR:
         audio_buffer.seek(0)
         
         transcribed_text = ""
-        segments, info = self.whisper_model.transcribe(audio_buffer, language='en', beam_size=12, initial_prompt=context, condition_on_previous_text=True, vad_filter=True, vad_parameters={"threshold": 0.6, "min_silence_duration_ms": 300})
+        segments, info = self.whisper_model.transcribe(audio_buffer, 
+                                                        language='en',
+                                                        beam_size=12,
+                                                        initial_prompt=context,
+                                                        condition_on_previous_text=True,
+                                                        vad_filter=True,
+                                                        vad_parameters={"threshold": 0.6, "min_silence_duration_ms": 300})
         
         for segment in segments:
             transcribed_text += " " + segment.text
@@ -76,6 +85,7 @@ class ASR:
         combined_bytes_io.seek(0)  # Reset for reading
         transcribed_text = self.transcribe(combined_bytes_io, self.context)
         if "..." in transcribed_text or '- ' in transcribed_text:
+            print('something is unfinished')
             self.unfinished_sentence = transcribed_text.replace("...", "")  # Remove trailing ellipsis
             self.unfinished_sentence = transcribed_text.replace("- ", "")
             # print('missing end of sentence')
@@ -88,9 +98,12 @@ class ASR:
             transcribed_text = transcribed_text
             self.unfinished_sentence = None  # Reset unfinished sentence
         transcribed_text = transcribed_text.lstrip()
+        pattern = r'[^a-zA-Z0-9.,\-/?! ]'
+        transcribed_text = re.sub(pattern, '', transcribed_text)
         confirmed_text = self.confirm_text(transcribed_text)
-        # print(f"[CONFIRMED TRANSCRIPTION] {confirmed_text}")
-        print(f"[TRANSCRIPTION] {transcribed_text}")
+        print(f"[CONFIRMED TRANSCRIPTION] {confirmed_text}")
+        # print(f"[TRANSCRIPTION] {transcribed_text}")
+
         self.update_context(transcribed_text)
     
         # Clear audio buffer after processing to avoid duplicating input
@@ -101,7 +114,8 @@ class ASR:
         # Split the current and previous transcription into words
         new_words = transcribed_text.split()
         prev_words = self.previous_transcription.split()
-
+        if len(prev_words) == 0:
+            return ' '.join(new_words)
         # Initialize a list to store matching words
         matching_words = []
 
@@ -117,7 +131,7 @@ class ASR:
                 matching_words.append(word)
 
         # Update previous transcription for future comparisons
-        self.previous_transcription = transcribed_text
+        self.previous_transcription += transcribed_text
 
         # Join and return the matching prefix as a single string
         return ' '.join(matching_words)    
@@ -127,8 +141,8 @@ class ASR:
         
         # Add the new transcription to context, treating it as a moving shingle
         if(len((self.context + " " + new_text).split()) > self.max_context_length):
-            words_to_keep = max(int(self.max_context_length * 0.2), 1)
-            self.context = self.context[-words_to_keep:] + new_text
+            words_to_keep = ceil(self.max_context_length * 0.1)
+            self.context = ' '.join(self.context.split()[-words_to_keep:]) + new_text
         else:
             self.context += " " + new_text
         

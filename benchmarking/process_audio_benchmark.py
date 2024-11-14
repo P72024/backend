@@ -16,8 +16,8 @@ from ASR.ASR import ASR
 
 sr = 16000
 
-async def process_audio_benchmark(chunks_pkl, meta_pkl, txt_filename, size):
-    asr = ASR(model_size=size, device="auto", compute_type="float32", max_context_length=80)
+async def process_audio_benchmark(chunks_pkl, meta_pkl, txt_filename, size, max_ctx_length, chunk_lim):
+    asr = ASR(model_size=size, device="auto", compute_type="float32", max_context_length=max_ctx_length, chunk_limit=chunk_lim)
     try:
         transcribed_text = ""
         actual_text = ""
@@ -26,6 +26,7 @@ async def process_audio_benchmark(chunks_pkl, meta_pkl, txt_filename, size):
         with open(chunks_pkl, 'rb') as f:
             chunks = pickle.load(f)
         asr.save_metadata(meta[0])
+        print(f"Number of chunks: {len(chunks)}")
         #Start timer
         times = []
         for chunk in chunks:
