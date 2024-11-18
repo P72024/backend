@@ -893,3 +893,609 @@
 2024-11-14 15:33:59,850 - INFO - connection closed
 2024-11-14 15:45:42,705 - INFO - server closing
 2024-11-14 15:45:42,706 - INFO - server closed
+2024-11-18 09:34:49,355 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 09:34:49,356 - INFO - Server is ready!
+2024-11-18 09:42:03,140 - INFO - server closing
+2024-11-18 09:42:03,140 - INFO - server closed
+2024-11-18 09:42:08,186 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 09:42:08,187 - INFO - Server is ready!
+2024-11-18 09:46:33,384 - INFO - server closing
+2024-11-18 09:46:33,384 - INFO - server closed
+2024-11-18 09:46:39,200 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 09:46:39,201 - INFO - Server is ready!
+2024-11-18 09:48:38,364 - INFO - server closing
+2024-11-18 09:48:38,364 - INFO - server closed
+2024-11-18 09:52:26,285 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 09:52:26,285 - INFO - Server is ready!
+2024-11-18 09:52:56,677 - INFO - server closing
+2024-11-18 09:52:56,677 - INFO - server closed
+2024-11-18 09:53:02,506 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 09:53:02,506 - INFO - Server is ready!
+2024-11-18 09:53:45,007 - INFO - server closing
+2024-11-18 09:53:45,008 - INFO - server closed
+2024-11-18 09:53:49,909 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 09:53:49,909 - INFO - Server is ready!
+2024-11-18 09:54:48,660 - INFO - server closing
+2024-11-18 09:54:48,713 - ERROR - Task exception was never retrieved
+future: <Task finished name='Task-3' coro=<WebSocketServer._close() done, defined at /home/ucloud/.local/lib/python3.12/site-packages/websockets/legacy/server.py:758> exception=KeyboardInterrupt()>
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/ucloud/P7Project/backend/./src/__main__.py", line 144, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 674, in run_until_complete
+    self.run_forever()
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 641, in run_forever
+    self._run_once()
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 1987, in _run_once
+    handle._run()
+  File "/usr/lib/python3.12/asyncio/events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "/home/ucloud/.local/lib/python3.12/site-packages/websockets/legacy/server.py", line 767, in _close
+    self.logger.info("server closing")
+  File "/usr/lib/python3.12/logging/__init__.py", line 1539, in info
+    self._log(INFO, msg, args, **kwargs)
+  File "/usr/lib/python3.12/logging/__init__.py", line 1684, in _log
+    self.handle(record)
+  File "/usr/lib/python3.12/logging/__init__.py", line 1700, in handle
+    self.callHandlers(record)
+  File "/usr/lib/python3.12/logging/__init__.py", line 1762, in callHandlers
+    hdlr.handle(record)
+  File "/usr/lib/python3.12/logging/__init__.py", line 1028, in handle
+    self.emit(record)
+  File "/usr/lib/python3.12/logging/__init__.py", line 1280, in emit
+    StreamHandler.emit(self, record)
+  File "/usr/lib/python3.12/logging/__init__.py", line 1163, in emit
+    stream.write(msg + self.terminator)
+  File "/usr/lib/python3.12/asyncio/runners.py", line 157, in _on_sigint
+    raise KeyboardInterrupt()
+KeyboardInterrupt
+2024-11-18 09:55:03,814 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 09:55:03,814 - INFO - Server is ready!
+2024-11-18 09:55:19,789 - INFO - server closing
+2024-11-18 09:55:19,789 - INFO - server closed
+2024-11-18 09:55:24,479 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 09:55:24,479 - INFO - Server is ready!
+2024-11-18 09:58:32,980 - INFO - server closing
+2024-11-18 09:58:32,980 - INFO - server closed
+2024-11-18 09:58:41,511 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 09:58:41,512 - INFO - Server is ready!
+2024-11-18 09:58:59,470 - INFO - server closing
+2024-11-18 09:58:59,470 - INFO - server closed
+2024-11-18 10:30:07,631 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 10:30:07,631 - INFO - Server is ready!
+2024-11-18 10:30:51,286 - INFO - server closing
+2024-11-18 10:30:51,286 - INFO - server closed
+2024-11-18 10:30:58,077 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 10:30:58,077 - INFO - Server is ready!
+2024-11-18 10:31:59,948 - INFO - server closing
+2024-11-18 10:31:59,948 - INFO - server closed
+2024-11-18 10:32:04,852 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 10:32:04,852 - INFO - Server is ready!
+2024-11-18 10:34:24,036 - INFO - connection open
+2024-11-18 10:34:24,036 - INFO - New client connected!
+2024-11-18 10:34:25,011 - INFO - Client IInN6ZCrcNaBJ7BoAAAF is joining room 2
+2024-11-18 10:34:25,011 - WARNING - Room 2 does not exist. Creating new room.
+2024-11-18 10:34:25,011 - INFO - Saving metadata for the first audio chunk.
+2024-11-18 10:34:26,017 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:27,027 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:28,055 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:29,068 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:29,509 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:34:29,677 - INFO - VAD filter removed 00:01.840 of audio
+2024-11-18 10:34:30,943 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: Hello Mr Whisper
+2024-11-18 10:34:30,944 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:30,947 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:31,111 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:32,126 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:33,155 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:33,592 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:34:33,639 - INFO - VAD filter removed 00:02.224 of audio
+2024-11-18 10:34:34,218 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: Do you remember me? Oh my god, he can hear me
+2024-11-18 10:34:34,218 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:34,221 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:35,180 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:36,228 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:37,227 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:37,614 - INFO - Silence detected!
+2024-11-18 10:34:38,252 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:39,269 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:40,280 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:41,303 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:41,737 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:34:41,784 - INFO - VAD filter removed 00:00.720 of audio
+2024-11-18 10:34:42,378 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: Yes, so I fixed it by making the bag in the in-growth.
+2024-11-18 10:34:42,378 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:42,382 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:43,345 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:44,387 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:45,386 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:45,815 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:34:45,863 - INFO - VAD filter removed 00:01.232 of audio
+2024-11-18 10:34:46,451 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: And then put the in-growth link in the front end.
+2024-11-18 10:34:46,451 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:46,455 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:47,420 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:48,437 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:49,460 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:49,890 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:34:49,937 - INFO - VAD filter removed 00:00.560 of audio
+2024-11-18 10:34:50,417 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: But the front end actually is just 
+2024-11-18 10:34:50,417 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:50,480 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:51,504 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:52,524 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:53,537 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:53,970 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:34:54,017 - INFO - VAD filter removed 00:00.560 of audio
+2024-11-18 10:34:54,600 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: It's put forward, but he can do this. Yeah, it seems to be working
+2024-11-18 10:34:54,600 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:54,604 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:55,579 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:56,604 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:57,621 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:58,067 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:34:58,114 - INFO - VAD filter removed 00:02.416 of audio
+2024-11-18 10:34:58,644 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: Because we can't have 2-in-growth running at the same time.
+2024-11-18 10:34:58,644 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:58,647 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:34:59,697 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:00,679 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:01,702 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:02,080 - INFO - Silence detected!
+2024-11-18 10:35:02,724 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:03,745 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:04,774 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:05,795 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:06,223 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:35:06,270 - INFO - VAD filter removed 00:00.624 of audio
+2024-11-18 10:35:06,760 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: What we do then? This works, so
+2024-11-18 10:35:06,760 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:06,806 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:07,826 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:08,845 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:09,863 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:10,296 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:35:10,343 - INFO - VAD filter removed 00:00.656 of audio
+2024-11-18 10:35:11,036 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: It's fine. We just choose 2-in-growth like this. We make a new en-growth account.
+2024-11-18 10:35:11,036 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:11,040 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:11,904 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:12,922 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:13,943 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:14,377 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:35:14,424 - INFO - VAD filter removed 00:00.560 of audio
+2024-11-18 10:35:14,997 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: That is just for the server, and then we can use our accounts when we test.
+2024-11-18 10:35:14,997 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:15,001 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:15,980 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:17,003 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:18,025 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:18,419 - INFO - Silence detected!
+2024-11-18 10:35:19,044 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:20,063 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:21,081 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:22,101 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:22,492 - INFO - Silence detected!
+2024-11-18 10:35:23,123 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:24,145 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:25,169 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:26,181 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:26,622 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:35:26,670 - INFO - VAD filter removed 00:00.816 of audio
+2024-11-18 10:35:28,108 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: It's fine. It's fine.  Oh, I didn't let it go. That must be my fix.
+2024-11-18 10:35:28,108 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:28,112 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:28,223 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:29,244 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:30,264 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:30,700 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:35:30,747 - INFO - VAD filter removed 00:00.784 of audio
+2024-11-18 10:35:31,795 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: I don't remember.  Then I put 3-2 in my house.
+2024-11-18 10:35:31,796 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:31,800 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:32,307 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:33,322 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:34,347 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:34,784 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:35:34,832 - INFO - VAD filter removed 00:02.032 of audio
+2024-11-18 10:35:35,272 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: This is not foot.
+2024-11-18 10:35:35,272 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:35,364 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:36,380 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:37,414 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:38,426 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:38,884 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:35:38,933 - INFO - VAD filter removed 00:00.656 of audio
+2024-11-18 10:35:39,622 - INFO - Transcribed for client IInN6ZCrcNaBJ7BoAAAF in room 2: It's fine. It's fine. It's fine. It's fine.
+2024-11-18 10:35:39,622 - INFO - Sending transcribed text to client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:39,626 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:40,462 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:41,481 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:42,501 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:42,837 - INFO - Silence detected!
+2024-11-18 10:35:43,520 - WARNING - Transcribing audio chunk for client IInN6ZCrcNaBJ7BoAAAF in room 2
+2024-11-18 10:35:43,794 - INFO - Client disconnected gracefully. (in finally block)
+2024-11-18 10:35:43,794 - INFO - Client IInN6ZCrcNaBJ7BoAAAF left room 2
+2024-11-18 10:35:43,795 - WARNING - room 2 has been deleted
+2024-11-18 10:35:43,795 - INFO - Rooms: {}
+2024-11-18 10:35:43,795 - INFO - connection closed
+2024-11-18 10:35:43,813 - INFO - connection rejected (426 Upgrade Required)
+2024-11-18 10:35:43,814 - INFO - connection closed
+2024-11-18 10:35:53,600 - INFO - connection open
+2024-11-18 10:35:53,600 - INFO - New client connected!
+2024-11-18 10:35:54,610 - INFO - Client VLFUA37pPwgPzaNHAAAD is joining room 2
+2024-11-18 10:35:54,611 - WARNING - Room 2 does not exist. Creating new room.
+2024-11-18 10:35:54,611 - WARNING - Transcribing audio chunk for client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:35:55,578 - WARNING - Transcribing audio chunk for client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:35:56,601 - WARNING - Transcribing audio chunk for client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:35:56,994 - INFO - Silence detected!
+2024-11-18 10:35:57,618 - WARNING - Transcribing audio chunk for client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:35:58,643 - WARNING - Transcribing audio chunk for client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:35:59,691 - WARNING - Transcribing audio chunk for client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:36:00,681 - WARNING - Transcribing audio chunk for client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:36:01,130 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:36:01,178 - INFO - VAD filter removed 00:00.816 of audio
+2024-11-18 10:36:01,660 - INFO - Transcribed for client VLFUA37pPwgPzaNHAAAD in room 2: Yes, we are connected to server now.
+2024-11-18 10:36:01,660 - INFO - Sending transcribed text to client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:36:01,706 - WARNING - Transcribing audio chunk for client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:36:02,720 - WARNING - Transcribing audio chunk for client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:36:03,739 - WARNING - Transcribing audio chunk for client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:36:04,771 - WARNING - Transcribing audio chunk for client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:36:05,221 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:36:05,269 - INFO - VAD filter removed 00:00.560 of audio
+2024-11-18 10:36:05,890 - INFO - Transcribed for client VLFUA37pPwgPzaNHAAAD in room 2: Now we're taking the transcribing, taking care of all of them.
+2024-11-18 10:36:05,891 - INFO - Sending transcribed text to client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:36:05,894 - WARNING - Transcribing audio chunk for client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:36:06,850 - WARNING - Transcribing audio chunk for client VLFUA37pPwgPzaNHAAAD in room 2
+2024-11-18 10:36:07,299 - INFO - Client disconnected exception caught.
+2024-11-18 10:36:07,300 - INFO - Client disconnected gracefully. (in finally block)
+2024-11-18 10:36:07,300 - INFO - Client VLFUA37pPwgPzaNHAAAD left room 2
+2024-11-18 10:36:07,300 - WARNING - room 2 has been deleted
+2024-11-18 10:36:07,300 - INFO - Rooms: {}
+2024-11-18 10:36:07,300 - INFO - connection closed
+2024-11-18 10:45:01,023 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 10:45:01,024 - INFO - Server is ready!
+2024-11-18 10:47:31,582 - INFO - server closing
+2024-11-18 10:47:31,582 - INFO - server closed
+2024-11-18 10:53:15,068 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 10:53:15,068 - INFO - Server is ready!
+2024-11-18 10:53:19,268 - INFO - connection open
+2024-11-18 10:53:19,269 - INFO - New client connected!
+2024-11-18 10:53:20,251 - INFO - Client Lcr58PmZwxMAbI8gAAAB is joining room 2
+2024-11-18 10:53:20,251 - WARNING - Room 2 does not exist. Creating new room.
+2024-11-18 10:53:20,252 - INFO - Saving metadata for the first audio chunk.
+2024-11-18 10:53:21,245 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:22,261 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:23,286 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:24,313 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:24,776 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:53:24,947 - INFO - VAD filter removed 00:00.752 of audio
+2024-11-18 10:53:26,147 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: Hello, Mr. Whisper. Can you hear what I'm saying?
+2024-11-18 10:53:26,148 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:26,152 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:26,345 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:27,370 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:28,389 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:28,827 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:53:28,875 - INFO - VAD filter removed 00:02.032 of audio
+2024-11-18 10:53:29,464 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: What the fuck? Oh, he can hear what I'm saying.
+2024-11-18 10:53:29,465 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:29,468 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:30,427 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:31,444 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:32,475 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:32,935 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:53:32,983 - INFO - VAD filter removed 00:01.104 of audio
+2024-11-18 10:53:33,602 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: I think, you know, I get some light there. That's a good.
+2024-11-18 10:53:33,602 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:33,606 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:34,507 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:35,524 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:36,543 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:37,004 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:53:37,052 - INFO - VAD filter removed 00:00.432 of audio
+2024-11-18 10:53:37,642 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: That's a question. Listen, I indicated an asynchronous response by returning true.
+2024-11-18 10:53:37,642 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:37,645 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:38,584 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:39,600 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:40,626 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:41,034 - INFO - Silence detected!
+2024-11-18 10:53:41,650 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:42,665 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:43,687 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:44,703 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:45,091 - INFO - Silence detected!
+2024-11-18 10:53:45,729 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:46,751 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:47,775 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:48,797 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:49,248 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:53:49,295 - INFO - VAD filter removed 00:01.712 of audio
+2024-11-18 10:53:49,826 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: It is strange driving, even though that's an error.
+2024-11-18 10:53:49,826 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:49,829 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:50,827 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:51,846 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:52,869 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:53,321 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:53:53,368 - INFO - VAD filter removed 00:00.720 of audio
+2024-11-18 10:53:53,980 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: That is the error. Can you describe the error from me? I don't think.
+2024-11-18 10:53:53,980 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:53,983 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:54,916 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:55,926 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:56,944 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:57,367 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:53:57,414 - INFO - VAD filter removed 00:00.944 of audio
+2024-11-18 10:53:58,007 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: I look at again. Because we still don't get the fear by car.
+2024-11-18 10:53:58,008 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:58,011 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:53:58,983 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:00,008 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:01,030 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:01,441 - INFO - Silence detected!
+2024-11-18 10:54:02,047 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:03,073 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:04,087 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:05,103 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:05,549 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:54:05,597 - INFO - VAD filter removed 00:00.432 of audio
+2024-11-18 10:54:06,260 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: Tell him, if you go all the way to the chat, I think it's here on.
+2024-11-18 10:54:06,261 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:06,265 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:07,146 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:08,177 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:09,191 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:09,637 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:54:09,685 - INFO - VAD filter removed 00:00.432 of audio
+2024-11-18 10:54:10,515 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: I-I think it was in the bag and leave me.  Feel too low resources.  If you go.
+2024-11-18 10:54:10,515 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:10,518 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:11,227 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:12,247 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:13,276 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:13,733 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:54:13,781 - INFO - VAD filter removed 00:01.072 of audio
+2024-11-18 10:54:16,609 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: to to the  to the                                                                                                                                                                                                                      
+2024-11-18 10:54:16,610 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:16,614 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:16,614 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:16,614 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:17,346 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:17,789 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:54:17,836 - INFO - VAD filter removed 00:00.432 of audio
+2024-11-18 10:54:18,335 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: way. We're getting locks now. Why didn't we get that? I still got it back in.
+2024-11-18 10:54:18,336 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:18,372 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:19,389 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:20,406 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:21,429 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:21,837 - INFO - Silence detected!
+2024-11-18 10:54:22,453 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:23,476 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:24,488 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:25,510 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:25,972 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:54:26,019 - INFO - VAD filter removed 00:01.968 of audio
+2024-11-18 10:54:26,624 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: It's the last one.  It's the last one.
+2024-11-18 10:54:26,624 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:26,627 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:27,548 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:28,570 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:29,585 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:29,970 - INFO - Silence detected!
+2024-11-18 10:54:30,620 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:31,629 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:32,650 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:33,669 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:34,074 - INFO - Silence detected!
+2024-11-18 10:54:34,686 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:35,713 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:36,727 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:37,757 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:38,204 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:54:38,252 - INFO - VAD filter removed 00:03.056 of audio
+2024-11-18 10:54:38,651 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: How can that find it?
+2024-11-18 10:54:38,651 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:38,770 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:39,817 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:40,802 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:41,823 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:42,206 - INFO - Silence detected!
+2024-11-18 10:54:42,849 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:43,868 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:44,888 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:45,905 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:46,355 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:54:46,403 - INFO - VAD filter removed 00:01.392 of audio
+2024-11-18 10:54:49,538 - INFO - Transcribed for client Lcr58PmZwxMAbI8gAAAB in room 2: It's not, it's                                                                                                                                                                                                                       
+2024-11-18 10:54:49,539 - INFO - Sending transcribed text to client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:49,548 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:49,548 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:49,549 - WARNING - Transcribing audio chunk for client Lcr58PmZwxMAbI8gAAAB in room 2
+2024-11-18 10:54:49,640 - INFO - Client disconnected gracefully. (in finally block)
+2024-11-18 10:54:49,640 - INFO - Client Lcr58PmZwxMAbI8gAAAB left room 2
+2024-11-18 10:54:49,640 - WARNING - room 2 has been deleted
+2024-11-18 10:54:49,640 - INFO - Rooms: {}
+2024-11-18 10:54:49,640 - INFO - connection closed
+2024-11-18 10:55:12,103 - INFO - server closing
+2024-11-18 10:55:12,104 - INFO - server closed
+2024-11-18 10:55:18,618 - INFO - server listening on 127.0.0.1:3000
+2024-11-18 10:55:18,619 - INFO - Server is ready!
+2024-11-18 10:57:33,087 - INFO - connection open
+2024-11-18 10:57:33,088 - INFO - New client connected!
+2024-11-18 10:57:34,086 - INFO - Client cLtt0bv2C8082i6HAAAB is joining room 2
+2024-11-18 10:57:34,087 - WARNING - Room 2 does not exist. Creating new room.
+2024-11-18 10:57:34,087 - INFO - Saving metadata for the first audio chunk.
+2024-11-18 10:57:35,079 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:36,097 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:37,121 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:38,146 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:38,573 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:57:38,740 - INFO - VAD filter removed 00:00.608 of audio
+2024-11-18 10:57:40,331 - INFO - Transcribed for client cLtt0bv2C8082i6HAAAB in room 2: with the U.S. law as fuck.
+2024-11-18 10:57:40,331 - INFO - Sending transcribed text to client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:40,338 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:40,339 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:41,257 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:42,277 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:42,685 - INFO - Silence detected!
+2024-11-18 10:57:43,306 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:44,321 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:45,336 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:46,359 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:46,813 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:57:46,861 - INFO - VAD filter removed 00:00.512 of audio
+2024-11-18 10:57:47,560 - INFO - Transcribed for client cLtt0bv2C8082i6HAAAB in room 2: The U.S. law as fuck.
+2024-11-18 10:57:47,560 - INFO - Sending transcribed text to client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:47,563 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:48,398 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:49,417 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:50,440 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:50,895 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:57:50,943 - INFO - VAD filter removed 00:00.000 of audio
+2024-11-18 10:57:51,480 - INFO - Transcribed for client cLtt0bv2C8082i6HAAAB in room 2: Because the Internet connection is so bad, it's very shocking.
+2024-11-18 10:57:51,481 - INFO - Sending transcribed text to client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:51,484 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:52,476 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:53,498 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:54,522 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:54,964 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:57:55,011 - INFO - VAD filter removed 00:01.792 of audio
+2024-11-18 10:57:55,634 - INFO - Transcribed for client cLtt0bv2C8082i6HAAAB in room 2: The Internet connection is so bad, the Internet connection is so bad, the Internet connection is so bad.
+2024-11-18 10:57:55,634 - INFO - Sending transcribed text to client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:56,167 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:56,670 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:57,580 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:58,599 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:59,043 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:57:59,090 - INFO - VAD filter removed 00:00.000 of audio
+2024-11-18 10:57:59,705 - INFO - Transcribed for client cLtt0bv2C8082i6HAAAB in room 2: But it gets what I'm hearing right now, and also a bit fast enough.
+2024-11-18 10:57:59,705 - INFO - Sending transcribed text to client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:57:59,709 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:00,640 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:01,656 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:02,673 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:03,107 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:58:03,155 - INFO - VAD filter removed 00:00.000 of audio
+2024-11-18 10:58:03,760 - INFO - Transcribed for client cLtt0bv2C8082i6HAAAB in room 2: Because as always, it's a bit cool in the beginning. It has to warm.
+2024-11-18 10:58:03,761 - INFO - Sending transcribed text to client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:03,764 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:04,717 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:05,736 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:06,759 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:07,138 - INFO - Silence detected!
+2024-11-18 10:58:07,776 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:08,797 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:09,835 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:10,837 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:11,229 - INFO - Silence detected!
+2024-11-18 10:58:11,857 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:12,876 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:13,897 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:14,922 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:15,375 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:58:15,422 - INFO - VAD filter removed 00:00.000 of audio
+2024-11-18 10:58:15,951 - INFO - Transcribed for client cLtt0bv2C8082i6HAAAB in room 2: But I don't think we need to make some locking and some garlic.
+2024-11-18 10:58:15,952 - INFO - Sending transcribed text to client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:15,955 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:16,963 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:17,978 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:19,015 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:19,470 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:58:19,518 - INFO - VAD filter removed 00:00.000 of audio
+2024-11-18 10:58:20,003 - INFO - Transcribed for client cLtt0bv2C8082i6HAAAB in room 2: So we know if it is, the actual.
+2024-11-18 10:58:20,003 - INFO - Sending transcribed text to client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:20,021 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:21,032 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:22,059 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:23,078 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:23,473 - INFO - Silence detected!
+2024-11-18 10:58:24,114 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:25,116 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:26,155 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:27,158 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:27,549 - INFO - Silence detected!
+2024-11-18 10:58:28,186 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:29,203 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:30,216 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:31,243 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:31,657 - INFO - Silence detected!
+2024-11-18 10:58:32,261 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:33,277 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:34,294 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:35,319 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:35,763 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:58:35,813 - INFO - VAD filter removed 00:00.096 of audio
+2024-11-18 10:58:37,023 - INFO - Transcribed for client cLtt0bv2C8082i6HAAAB in room 2: Let's see if it is.  Let's see if it is.
+2024-11-18 10:58:37,024 - INFO - Sending transcribed text to client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:37,027 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:37,359 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:38,385 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:39,402 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:39,794 - INFO - Silence detected!
+2024-11-18 10:58:40,418 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:41,448 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:42,460 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:43,487 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:43,877 - INFO - Silence detected!
+2024-11-18 10:58:44,508 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:45,515 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:46,533 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:47,557 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:47,934 - INFO - Silence detected!
+2024-11-18 10:58:48,600 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:49,595 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:50,618 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:51,640 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:52,023 - INFO - Silence detected!
+2024-11-18 10:58:52,652 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:53,677 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:54,698 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:55,718 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:56,163 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:58:56,212 - INFO - VAD filter removed 00:00.000 of audio
+2024-11-18 10:58:56,682 - INFO - Transcribed for client cLtt0bv2C8082i6HAAAB in room 2: Let's see if it is.
+2024-11-18 10:58:56,683 - INFO - Sending transcribed text to client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:56,737 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:57,756 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:58,771 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:58:59,793 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:00,227 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:59:00,276 - INFO - VAD filter removed 00:01.440 of audio
+2024-11-18 10:59:00,710 - INFO - Transcribed for client cLtt0bv2C8082i6HAAAB in room 2: Let's see if it is.
+2024-11-18 10:59:00,710 - INFO - Sending transcribed text to client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:00,834 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:01,840 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:02,854 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:03,875 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:04,302 - INFO - Processing audio with duration 00:05.040
+2024-11-18 10:59:04,351 - INFO - VAD filter removed 00:00.000 of audio
+2024-11-18 10:59:04,889 - INFO - Transcribed for client cLtt0bv2C8082i6HAAAB in room 2: Let's see if it is.
+2024-11-18 10:59:04,889 - INFO - Sending transcribed text to client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:04,893 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:05,917 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:06,939 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:07,959 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:08,355 - INFO - Silence detected!
+2024-11-18 10:59:08,972 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:09,996 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:11,025 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:12,044 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:12,444 - INFO - Silence detected!
+2024-11-18 10:59:13,060 - WARNING - Transcribing audio chunk for client cLtt0bv2C8082i6HAAAB in room 2
+2024-11-18 10:59:13,941 - INFO - server closing
+2024-11-18 10:59:14,001 - INFO - Client disconnected gracefully. (in finally block)
+2024-11-18 10:59:14,002 - INFO - Client cLtt0bv2C8082i6HAAAB left room 2
+2024-11-18 10:59:14,002 - WARNING - room 2 has been deleted
+2024-11-18 10:59:14,002 - INFO - Rooms: {}
+2024-11-18 10:59:14,002 - INFO - connection closed
+2024-11-18 10:59:14,003 - INFO - server closed

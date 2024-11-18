@@ -22,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize the ASR model
-_ASR = ASR("tiny", "auto", "int8", 80)
+_ASR = ASR("tiny", device="auto", compute_type="int8", max_context_length=80)
 
 # Store connected clients
 connected_clients = set()
@@ -45,6 +45,7 @@ async def process_audio_chunks():
             continue
 
         logging.warning(f"Transcribing audio chunk for client {client_id} in room {room_id}")
+        print(f"Transcribing audio chunk for client {client_id} in room {room_id}")
         transcribed_text = _ASR.receive_audio_chunk(audio_data)
 
         if transcribed_text:
@@ -134,7 +135,7 @@ async def save_metadata(data):
 
 async def main():
     # Start the websocket server
-    async with websockets.serve(handler, "localhost", 3000):
+    async with websockets.serve(handler, "127.0.0.1", 3000):
         logging.info("Server is ready!")
         
         await process_audio_chunks()
