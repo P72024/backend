@@ -22,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize the ASR model
-_ASR = ASR("tiny", device="auto", compute_type="int8", max_context_length=80)
+_ASR = ASR("tiny", device="auto", compute_type="int8", max_context_length=100)
 
 # Store connected clients
 connected_clients = set()
@@ -135,7 +135,7 @@ async def save_metadata(data):
 
 async def main():
     # Start the websocket server
-    async with websockets.serve(handler, "127.0.0.1", 3000):
+    async with websockets.serve(handler, "0.0.0.0", 3000):
         logging.info("Server is ready!")
         
         await process_audio_chunks()

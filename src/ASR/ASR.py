@@ -42,7 +42,7 @@ class ASR:
         audio_buffer.seek(0)
         
         transcribed_text = ""
-        segments, info = self.whisper_model.transcribe(audio_buffer, language='en', beam_size=12, initial_prompt=context, condition_on_previous_text=True, vad_filter=True, vad_parameters={"threshold": 0.6, "min_silence_duration_ms": 300})
+        segments, info = self.whisper_model.transcribe(audio_buffer, language='en', beam_size=12, initial_prompt=context, condition_on_previous_text=True, vad_filter=True, vad_parameters={"threshold": 0.7, "min_silence_duration_ms": 300})
         
         for segment in segments:
             transcribed_text += " " + segment.text
@@ -152,6 +152,7 @@ class ASR:
         rms_energy = np.sqrt(np.mean(np.square(audio_data)))
         
         print(f"[RMS ENERGY] {rms_energy}")
+        logging.info(f"[RMS ENERGY] {rms_energy}")
         
         # Check if energy is below the silence threshold
         return rms_energy < self.silence_threshold
