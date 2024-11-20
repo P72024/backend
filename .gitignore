@@ -1,3 +1,4 @@
 venv
 share
 logs/*
+__pycache__
