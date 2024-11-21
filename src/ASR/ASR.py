@@ -1,3 +1,5 @@
+
+import logging
 import re
 import wave
 from asyncio import sleep
@@ -22,7 +24,7 @@ class ASR:
     local_agreement = LocalAgreement()
     context:str = ""
     confirmed_sentences: List[str] = []
-    min_chunk_size = 48
+    min_chunk_size = 3
     unfinished_sentence = None
     min_silence_duration_ms = 300  # Minimum duration of silence to consider it as non-speech
     previous_buffer = BytesIO()
@@ -79,7 +81,7 @@ class ASR:
         combined_bytes_io = BytesIO(combined_bytes)
 
         if(self.is_silent(combined_bytes_io)):
-            print("Silence detected!")
+            logging.info("Silence detected!")
             self.audio_buffer.clear()
             return ""
         combined_bytes_io.seek(0)  # Reset for reading
@@ -165,6 +167,7 @@ class ASR:
         rms_energy = np.sqrt(np.mean(np.square(audio_data)))
         
         print(f"[RMS ENERGY] {rms_energy}")
+        logging.info(f"[RMS ENERGY] {rms_energy}")
         
         # Check if energy is below the silence threshold
         return rms_energy < self.silence_threshold
