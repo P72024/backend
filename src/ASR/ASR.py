@@ -7,11 +7,10 @@ from typing import List
 
 import numpy as np
 import soundfile as sf
+from ASR.LocalAgreement import LocalAgreement
 from faster_whisper import WhisperModel
 from numpy._core.multiarray import empty
 from pydub import AudioSegment
-
-from ASR.LocalAgreement import LocalAgreement
 
 
 class ASR:
@@ -114,13 +113,16 @@ class ASR:
         # Split the current and previous transcription into words
         new_words = transcribed_text.split()
         prev_words = self.previous_transcription.split()
-        if len(prev_words) == 0:
-            return ' '.join(new_words)
-        # Initialize a list to store matching words
-        matching_words = []
 
-        # Compare words until two consecutive words differ
+        if not prev_words:
+            # If no previous words, store the new transcription and return it
+            self.previous_transcription += transcribed_text
+            return transcribed_text
+
+        # Find the longest matching prefix with up to 2 differences
+        matching_words = []
         differences = 0
+
         for i, word in enumerate(new_words):
             if i < len(prev_words) and word == prev_words[i]:
                 matching_words.append(word)
@@ -130,11 +132,15 @@ class ASR:
                     break
                 matching_words.append(word)
 
-        # Update previous transcription for future comparisons
-        self.previous_transcription += transcribed_text
+        # Update the previous transcription (maintain last 1/3 if > 100 words)
+        all_words = (self.previous_transcription + " " + transcribed_text).split()
+        if len(all_words) > 100:
+            self.previous_transcription = " ".join(all_words[-(len(all_words) // 3):])
+        else:
+            self.previous_transcription = " ".join(all_words)
 
-        # Join and return the matching prefix as a single string
-        return ' '.join(matching_words)    
+        # Return the matching prefix
+        return " ".join(matching_words)
 
     def update_context(self, new_text: str):
         """Update context with a sliding window to maintain continuity up to max_context_length words."""

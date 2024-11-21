@@ -3,7 +3,6 @@ import os
 import sys
 
 from memory_profiler import profile
-
 from process_audio_benchmark import process_audio_benchmark
 
 # Add the src folder to the Python path
