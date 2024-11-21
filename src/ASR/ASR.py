@@ -13,7 +13,7 @@ from faster_whisper import WhisperModel
 from numpy._core.multiarray import empty
 from pydub import AudioSegment
 
-from ASR.LocalAgreement import LocalAgreement
+from src.ASR.LocalAgreement import LocalAgreement
 
 
 class ASR:
@@ -35,7 +35,7 @@ class ASR:
         self.min_chunk_size = chunk_limit
         self.max_context_length = max_context_length
         
-    def transcribe(self, audio_buffer: BytesIO, context: str):
+    def transcribe(self, audio_buffer: BytesIO, context: str) -> str:
         # print(audio_buffer.getbuffer().nbytes)
 
         audio_buffer.seek(0)
@@ -61,6 +61,7 @@ class ASR:
     
     def save_metadata(self, metadata):
         # print("saving metadata")
+        print(type(metadata))
         self.metadata.write(metadata)
         self.metadata.seek(0)  # Reset buffer's position to the beginning
 
@@ -117,6 +118,7 @@ class ASR:
         new_words = transcribed_text.split()
         prev_words = self.previous_transcription.split()
         if len(prev_words) == 0:
+            self.previous_transcription = ' '.join(new_words)
             return ' '.join(new_words)
         # Initialize a list to store matching words
         matching_words = []
@@ -133,7 +135,10 @@ class ASR:
                 matching_words.append(word)
 
         # Update previous transcription for future comparisons
-        self.previous_transcription += transcribed_text
+        if self.previous_transcription == "":
+            self.previous_transcription = transcribed_text
+        else:
+            self.previous_transcription += " " + transcribed_text
 
         # Join and return the matching prefix as a single string
         return ' '.join(matching_words)    
@@ -142,11 +147,14 @@ class ASR:
         """Update context with a sliding window to maintain continuity up to max_context_length words."""
         
         # Add the new transcription to context, treating it as a moving shingle
-        if(len((self.context + " " + new_text).split()) > self.max_context_length):
+        if(len((self.context + " " + new_text).split()) >= self.max_context_length):
             words_to_keep = ceil(self.max_context_length * 0.1)
-            self.context = ' '.join(self.context.split()[-words_to_keep:]) + new_text
+            self.context = ' '.join(self.context.split()[-words_to_keep:]) + " " + new_text
         else:
-            self.context += " " + new_text
+            if self.context == '':
+                self.context = new_text
+            else:
+                self.context += " " + new_text
         
         # Debug statement to check current context
         # print(f"Updated Context (Shingle): {self.context}")
