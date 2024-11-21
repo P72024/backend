@@ -10,7 +10,6 @@ from typing import List
 import numpy as np
 import soundfile as sf
 from faster_whisper import WhisperModel
-from numpy._core.multiarray import empty
 from pydub import AudioSegment
 
 from ASR.LocalAgreement import LocalAgreement
@@ -38,10 +37,10 @@ class ASR:
     def transcribe(self, audio_buffer: BytesIO, context: str):
         # print(audio_buffer.getbuffer().nbytes)
 
-        audio_buffer.seek(0)
-        # a lil debug tang
-        with open("temp.webm", 'wb') as f:
-            f.write(audio_buffer.getvalue())
+        # audio_buffer.seek(0)
+        # # a lil debug tang
+        # with open("temp.webm", 'wb') as f:
+        #     f.write(audio_buffer.getvalue())
 
         audio_buffer.seek(0)
         
