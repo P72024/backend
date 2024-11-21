@@ -3,8 +3,9 @@ import json
 import os
 import pickle
 from io import BytesIO
-import numpy as np
+
 import websockets
+
 from ASR.ASR import ASR
 import logging
 
@@ -24,7 +25,6 @@ logger = logging.getLogger(__name__)
 # Initialize the ASR model
 _ASR = ASR("tiny", device="auto", compute_type="int8", max_context_length=100)
 
-# Store connected clients
 connected_clients = set()
 rooms = dict()
 
@@ -65,11 +65,12 @@ async def process_audio_chunks():
 async def handler(websocket):
     logging.info("New client connected!")
     connected_clients.add(websocket)
-    
     try:
         async for message in websocket:
-            # Parse incoming message
+            transcribed_text = ''
+
             data = json.loads(message)
+
             client_id = data.get('clientId')
             room_id = data.get('roomId')
             audio_data = bytes(data.get('audioData'))
