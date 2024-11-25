@@ -20,7 +20,7 @@ jobs:
         # REMOVE continue-on-error: true to ensure the step fails on errors
 
       - name: Write logs
-        if: failure() # Write logs only if the test step failed
+        if: ${{ !success() }} # Write logs only if the test step failed
         run: |
           docker logs backend-backend-1
     
