@@ -12,4 +12,4 @@ fi
 
 
 cd /app
-python3 -u ./src/
+python3 -u src

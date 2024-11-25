@@ -13,7 +13,7 @@ from faster_whisper import WhisperModel
 from numpy._core.multiarray import empty
 from pydub import AudioSegment
 
-from src.ASR.LocalAgreement import LocalAgreement
+from .LocalAgreement import LocalAgreement
 
 
 class ASR:
