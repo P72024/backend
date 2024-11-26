@@ -3,6 +3,8 @@ class LocalAgreement:
     unconfirmed_text: str = ""
 
     def longest_common_sequence(self, unconfirmed_incoming_text, unconfirmed_text):
+        unconfirmed_text.strip()
+        unconfirmed_incoming_text.strip()
         words1 = unconfirmed_text.split()
         words2 = unconfirmed_incoming_text.split()
 
@@ -12,16 +14,7 @@ class LocalAgreement:
         for i in range(len(words1)):
             if i < len(words2) and words1[i] == words2[i]:
                 current_seq.append(words1[i])
-            else:
-                if len(current_seq) > len(longest_seq):
-                    longest_seq = current_seq
-                current_seq = []
-
-        # Handle case where the longest sequence ends at the last word
-        if len(current_seq) > len(longest_seq):
-            longest_seq = current_seq
-
-        return " ".join(longest_seq)
+        return " ".join(current_seq)
 
     def confirm_tokens(self, incoming_text: str) -> str:
         # Find the unconfirmed part of the incoming text (ignoring the previously confirmed part)
@@ -39,7 +32,12 @@ class LocalAgreement:
                 self.confirmed_text = lcs
 
         # Store the remaining unconfirmed part of the incoming text for the next input
-        self.unconfirmed_text = unconfirmed_incoming_text[len(lcs):].strip()
+        # print(f"UNCONFIRMED TESTS: {self.unconfirmed_text}")
+
+        print(f"self.unconfirmed before stripping: {unconfirmed_incoming_text}")
+        self.unconfirmed_text = unconfirmed_incoming_text[len(lcs.strip()):].strip()
+        print(f"self.unconfirmed after stripping: {self.unconfirmed_text}")
+
 
         return self.confirmed_text
     

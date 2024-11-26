@@ -24,14 +24,18 @@ class ASR:
     context:str = ""
     confirmed_sentences: List[str] = []
     min_chunk_size = 3
+    min_chunk_size_default = 3
     unfinished_sentence = None
     min_silence_duration_ms = 300  # Minimum duration of silence to consider it as non-speech
     previous_buffer = BytesIO()
     previous_transcription = ""
+    idx_zero_fails = 0
+    idx_zero_fail_limit = 3
 
     def __init__ (self, model_size: str, device="auto", compute_type = "float16", max_context_length=200, chunk_limit=48):
         self.whisper_model = WhisperModel(model_size, device=device, compute_type=compute_type)
         self.min_chunk_size = chunk_limit
+        self.min_chunk_size_default = chunk_limit
         self.max_context_length = max_context_length
         
     def transcribe(self, audio_buffer: BytesIO, context: str) -> str:
@@ -44,23 +48,25 @@ class ASR:
 
         audio_buffer.seek(0)
         
-        transcribed_text = ""
-        segments, info = self.whisper_model.transcribe(audio_buffer, 
+        segments, _ = self.whisper_model.transcribe(audio_buffer, 
                                                         language='en',
                                                         beam_size=12,
                                                         initial_prompt=context,
                                                         condition_on_previous_text=True,
                                                         vad_filter=True,
-                                                        vad_parameters={"threshold": 0.6, "min_silence_duration_ms": 300})
+                                                        vad_parameters={"threshold": 0.6, "min_silence_duration_ms": 300}, word_timestamps=True)
         
+        transcribed_words = []
         for segment in segments:
-            transcribed_text += " " + segment.text
-            
-        return transcribed_text
+            for word in segment.words:
+            # Append each word with its text and timestamp
+                transcribed_words.append((word.word, word.start, word.end, word.probability))
+
+        return transcribed_words
     
     def save_metadata(self, metadata):
         # print("saving metadata")
-        print(type(metadata))
+        # print(type(metadata))
         self.metadata.write(metadata)
         self.metadata.seek(0)  # Reset buffer's position to the beginning
 
@@ -79,68 +85,114 @@ class ASR:
     def process_audio(self) -> str:
         combined_bytes = self.metadata.getvalue() + b''.join(bio.getvalue() for bio in self.audio_buffer)
         combined_bytes_io = BytesIO(combined_bytes)
+        (sampleRate, sampleWidth, numChannels) = self.analyze(combined_bytes_io)
+        # print(f"Sample Rate: {sampleRate}, Sample Width: {sampleWidth}, Number of Channels: {numChannels}")
 
         if(self.is_silent(combined_bytes_io)):
             logging.info("Silence detected!")
             self.audio_buffer.clear()
             return ""
         combined_bytes_io.seek(0)  # Reset for reading
-        transcribed_text = self.transcribe(combined_bytes_io, self.context)
-        if "..." in transcribed_text or '- ' in transcribed_text:
-            print('something is unfinished')
-            self.unfinished_sentence = transcribed_text.replace("...", "")  # Remove trailing ellipsis
-            self.unfinished_sentence = transcribed_text.replace("- ", "")
-            # print('missing end of sentence')
-            return ""
-        
-        # If there was an unfinished sentence, merge it with the new transcription
-        if self.unfinished_sentence:
-            # print(f"Merging sentences:\n1. '{transcribed_text}'\n2. '{self.unfinished_sentence}'")
-            # transcribed_text = self.merge_sentences(self.unfinished_sentence, transcribed_text)
-            transcribed_text = transcribed_text
-            self.unfinished_sentence = None  # Reset unfinished sentence
-        transcribed_text = transcribed_text.lstrip()
-        pattern = r'[^a-zA-Z0-9.,\-/?! ]'
-        transcribed_text = re.sub(pattern, '', transcribed_text)
-        confirmed_text = self.confirm_text(transcribed_text)
-        print(f"[CONFIRMED TRANSCRIPTION] {confirmed_text}")
-        # print(f"[TRANSCRIPTION] {transcribed_text}")
+        transcribed_words = self.transcribe(combined_bytes_io, self.context)
+        start_audio_time_split : int = 0
+        end_audio_time_split : int = 0
+        transcribed_text = ""
+        total_prob = 0
+        for idx, (text, start, end, prob) in enumerate(transcribed_words):
+            total_prob += prob
+            transcribed_text += " " + text.strip()
+            transcribed_text.strip()
+        if total_prob / len(transcribed_words) > 0.70:
+            self.update_context(transcribed_text)
+            yield transcribed_text
+            self.min_chunk_size = self.min_chunk_size_default
+            self.audio_buffer.clear()
+        else:
+            self.min_chunk_size += self.min_chunk_size_default
 
-        self.update_context(transcribed_text)
+
+            # print(f"(INDEX: {idx}, TEXT: {text.strip()}, PROB: {prob}, STARTTIME: {start}, ENDTIME: {end})")
+            # if prob > 0.50:
+            #     transcribed_text += " " + text.strip()
+            #     transcribed_text.strip()
+            #     if idx % 3 == 0:
+            #         end_audio_time_split = end
+            #     yield text
+            #     if idx == len(transcribed_words) -1:
+            #         self.audio_buffer.clear()
+            #         break
+            #
+            # elif prob < 0.50:
+            #     # if idx == 0:
+            #     #     self.idx_zero_fails += 1
+            #     #     if self.idx_zero_fails >= self.idx_zero_fail_limit:
+            #     #         end_audio_time_split = end
+            #     #         yield text
+            #     #         transcribed_text += " " + text.strip()
+            #     #         transcribed_text.strip()
+            #     #         self.remove_time_frame(start_audio_time_split, end_audio_time_split, sampleRate, sampleWidth, numChannels)
+            #     #         self.idx_zero_fails = 0
+            #     #         break
+            #     # elif end_audio_time_split != 0:
+            #     #     # A word was found that was not confident. Remove the emitted audio segments that has been yielded from the self.audio_buffer.
+            #     self.remove_time_frame(start_audio_time_split, end_audio_time_split, sampleRate, sampleWidth, numChannels)
+            #     # print(f"not good enough on index: {idx} with confidence: {prob}")
+            #     break
+
+                
+
+
+
+        
+
+        # print(f"context is : {self.context}")
     
         # Clear audio buffer after processing to avoid duplicating input
-        self.audio_buffer.clear()
-        return transcribed_text
+        # self.audio_buffer.clear()
+        # return transcribed_text
 
-    def confirm_text(self, transcribed_text: str) -> str:
-        # Split the current and previous transcription into words
-        new_words = transcribed_text.split()
-        prev_words = self.previous_transcription.split()
-        if len(prev_words) == 0:
-            self.previous_transcription = ' '.join(new_words)
-            return ' '.join(new_words)
-        # Initialize a list to store matching words
-        matching_words = []
+    def remove_time_frame(self, start_time: int, end_time: int, sampleRate, sampleWidth, numChannels):
+        print(f"Now removing time frame from Start: {start_time} till End: {end_time}")
+        # Parameters to calculate time per chunk (adjust according to your format)
+        sample_rate = sampleRate  # e.g., 16 kHz
+        bytes_per_sample = sampleWidth  # e.g., 16-bit audio = 2 bytes per sample
+        channels = numChannels          # e.g., mono audio
+        bytes_per_second = sample_rate * bytes_per_sample * channels
 
-        # Compare words until two consecutive words differ
-        differences = 0
-        for i, word in enumerate(new_words):
-            if i < len(prev_words) and word == prev_words[i]:
-                matching_words.append(word)
+        # Time to byte range
+        start_byte = int(start_time * bytes_per_second)
+        end_byte = int((end_time) * bytes_per_second)
+
+        current_byte_position = 0
+        new_audio_buffer = []
+
+        for bio in self.audio_buffer:
+            bio_data = bio.getvalue()
+            bio_length = len(bio_data)
+
+            # Check if this chunk overlaps with the time range
+            if current_byte_position + bio_length <= start_byte:
+                # This chunk is completely before the range, keep it as is
+                new_audio_buffer.append(bio)
+            elif current_byte_position >= end_byte:
+                # This chunk is completely after the range, keep it as is
+                new_audio_buffer.append(bio)
             else:
-                differences += 1
-                if differences >= 2:
-                    break
-                matching_words.append(word)
+                # This chunk overlaps with the range
+                if current_byte_position < start_byte:
+                    # Keep the part before the start of the range
+                    overlap_start = start_byte - current_byte_position
+                    new_audio_buffer.append(BytesIO(bio_data[:overlap_start]))
+                if current_byte_position + bio_length > end_byte:
+                    # Keep the part after the end of the range
+                    overlap_end = end_byte - current_byte_position
+                    new_audio_buffer.append(BytesIO(bio_data[overlap_end:]))
 
-        # Update previous transcription for future comparisons
-        if self.previous_transcription == "":
-            self.previous_transcription = transcribed_text
-        else:
-            self.previous_transcription += " " + transcribed_text
+            # Update the current byte position
+            current_byte_position += bio_length
 
-        # Join and return the matching prefix as a single string
-        return ' '.join(matching_words)    
+        # Replace the audio buffer with the modified one
+        self.audio_buffer = new_audio_buffer
 
     def update_context(self, new_text: str):
         """Update context with a sliding window to maintain continuity up to max_context_length words."""
@@ -158,12 +210,22 @@ class ASR:
         # Debug statement to check current context
         # print(f"Updated Context (Shingle): {self.context}")
     
-    
+    def analyze(self, audio_bytes: BytesIO) -> bool:
+        """Check if the audio chunk is silent based on RMS energy."""
+        # Reset buffer and read audio data
+
+        audio : AudioSegment = AudioSegment.from_file(audio_bytes, format='webm', codec='opus')
+        samplewidth = audio.sample_width
+        numchannels = audio.channels
+        samplerate = audio.frame_rate
+        audio_bytes.seek(0)
+        return (samplerate, samplewidth, numchannels)
+
     def is_silent(self, audio_bytes: BytesIO) -> bool:
         """Check if the audio chunk is silent based on RMS energy."""
         # Reset buffer and read audio data
 
-        audio = AudioSegment.from_file(audio_bytes, format='webm', codec='opus')
+        audio : AudioSegment = AudioSegment.from_file(audio_bytes, format='webm', codec='opus')
         ogg_audio = BytesIO()
         audio.export(ogg_audio, format='ogg')
         audio_bytes = ogg_audio
@@ -173,37 +235,8 @@ class ASR:
         # Calculate RMS energy
         rms_energy = np.sqrt(np.mean(np.square(audio_data)))
         
-        print(f"[RMS ENERGY] {rms_energy}")
-        logging.info(f"[RMS ENERGY] {rms_energy}")
+        # print(f"[RMS ENERGY] {rms_energy}")
+        # logging.info(f"[RMS ENERGY] {rms_energy}")
         
         # Check if energy is below the silence threshold
         return rms_energy < self.silence_threshold
-
-    def merge_sentences(self, unfinished: str, completed: str) -> str:
-        """Merge unfinished and completed transcriptions by removing overlapping words and handling capitalization."""
-        
-        # Normalize both sentences to lowercase for comparison
-        unfinished_lower = unfinished.strip().lower()
-        completed_lower = completed.strip().lower()
-
-        # Check if both sentences are the same when case is ignored
-        if unfinished_lower == completed_lower:
-            return completed.strip()  # Return the completed sentence only
-
-        # Find the longest overlap from the end of 'unfinished' to the start of 'completed'
-        overlap = self.longest_common_suffix_prefix(unfinished, completed)
-        
-        # Combine the two sentences without duplicating the overlapping part
-        merged_sentence = unfinished + " " + completed[len(overlap):].strip()
-        return merged_sentence.strip()
-
-        
-    def longest_common_suffix_prefix(self, str1: str, str2: str) -> str:
-        """Find the longest common suffix of str1 that matches the prefix of str2."""
-        
-        min_len = min(len(str1), len(str2))
-        for i in range(min_len, 0, -1):
-            if str1[-i:] == str2[:i]:
-                return str1[-i:]
-        return ""
-
