@@ -60,7 +60,7 @@ async def process_audio_chunks():
                 except websockets.ConnectionClosed:
                     logging.warning("Client disconnected.")
                     connected_clients.pop(client_id)
-                    leave_room(room_id, client_id, websocket)
+                    await leave_room(room_id, client_id, websocket)
                     print(rooms)
 
 async def handler(websocket):
@@ -72,20 +72,20 @@ async def handler(websocket):
             
             match data["type"]:
                 case 'disconnecting':
-                    pass
+                    await disconnecting(data)
                 case 'leave room':
                     room_id = data.get(room_id)
                     client_id = data.get("clientId")
-                    leave_room(room_id, client_id, websocket)
+                    await leave_room(room_id, client_id, websocket)
                 case 'kickout':
-                    kickout(data)
+                    await kickout(data)
                 case 'message':
                     await handle_message(data)
                 case 'create or join':
                     room_id = data.get(room_id)
                     client_id = data.get("clientId")
                     logging.log(f"Create or join room: {room_id}")
-                    join_room(room_id, client_id, websocket)
+                    await join_room(room_id, client_id, websocket)
                 case _:
                     break
 
@@ -97,7 +97,7 @@ async def handler(websocket):
             room_id = data.get('roomId')
             audio_data = bytes(data.get('audioData'))
 
-            join_room(room_id, client_id, websocket)
+            await join_room(room_id, client_id, websocket)
             
             # Add audio chunk to the queue for processing
             await audio_queue.put((client_id, room_id, audio_data))
@@ -108,19 +108,27 @@ async def handler(websocket):
     finally:
         logging.info("Client disconnected gracefully. (in finally block)")
         connected_clients.pop(client_id)
-        leave_room(room_id, client_id, websocket)
+        await leave_room(room_id, client_id, websocket)
         print(rooms)
 
-def disconnection():
-    pass
+async def disconnecting(data):
+    room_id = data.get("roomId")
+    client_id = data.get("clientId")
+    if room_id not in rooms:
+        return
+    await broadcast({
+        "message": client_id,
+        "type": "leave"
+    })
 
-def kickout(data):
+
+async def kickout(data):
     room_id = data.get("roomId")
     client_to_kick_id = data.get("clientToKickId")
     client_id = data.get("clientId")
     
     if client_id in room_admins:
-        broadcast({
+        await broadcast({
             "message": client_to_kick_id,
             "type": "kickout",
         }, room_id)
@@ -162,7 +170,7 @@ async def broadcast(message, room_id=None):
             except websockets.ConnectionClosed:
                 logging.warning("Client disconnected.")
                 connected_clients.pop(client_id)
-                leave_room(room_id, client_id, websocket)
+                await leave_room(room_id, client_id, websocket)
                 print(rooms)
     else:
         for client_id, websocket in connected_clients.items():
@@ -173,12 +181,12 @@ async def broadcast(message, room_id=None):
                 connected_clients.pop(client_id)
                 room_id = next((key for key, value in rooms.items() if client_id in value), None)
                 if room_id is not None:
-                    leave_room(room_id, client_id, websocket)
+                    await leave_room(room_id, client_id, websocket)
                     print(rooms)
 
 
 
-def join_room(room_id, client_id, websocket):
+async def join_room(room_id, client_id, websocket):
     connected_clients.update({ client_id: websocket })
 
     if room_id not in rooms:
@@ -196,7 +204,7 @@ def join_room(room_id, client_id, websocket):
 
     elif (client_id, websocket) not in rooms[room_id]:
         logging.info(f"Client {client_id} is joining an existing room {room_id}")
-        broadcast({
+        await broadcast({
             "message": room_id,
             "type": "join",
         }, room_id)
@@ -208,12 +216,12 @@ def join_room(room_id, client_id, websocket):
             },
             "type": "joined",
         })
-        broadcast({
+        await broadcast({
             "message": client_id,
             "type": "ready",
         }, room_id)
 
-def leave_room(room_id, client_id, websocket):
+async def leave_room(room_id, client_id, websocket):
     if room_id in rooms:
         rooms[room_id].remove((client_id, websocket))
         logging.info(f'Client {client_id} left room {room_id}')
@@ -221,7 +229,7 @@ def leave_room(room_id, client_id, websocket):
             "message": room_id,
             "type": "left room",
         })
-        broadcast({
+        await broadcast({
             "message": client_id,
             "type": "leave"
         }, room_id)
