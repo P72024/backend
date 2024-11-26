@@ -3,6 +3,7 @@ import json
 import os
 import pickle
 from io import BytesIO
+import uuid
 
 import websockets
 
@@ -34,10 +35,11 @@ audio_queue = asyncio.Queue()
 
 async def process_audio_chunks():
     has_recieved_first_audio_chunk = False
-
+    
     while True:
         # Process each chunk in the queue one at a time
-        client_id, room_id, audio_data = await audio_queue.get()
+        client_id, room_id, audio_data = await audio_queue.get() # Gets stuck here because queue is empty. Maybe reason?
+        
 
         if not has_recieved_first_audio_chunk:
             logging.info("Saving metadata for the first audio chunk.")
@@ -56,7 +58,10 @@ async def process_audio_chunks():
             for (client_id, websocket) in list(rooms[room_id]):
                 try:
                     logging.info(f"Sending transcribed text to client {client_id} in room {room_id}")
-                    await websocket.send(transcribed_text)
+                    await websocket.send({
+                        "message": transcribed_text,
+                        "type": "transcribed text",
+                    })
                 except websockets.ConnectionClosed:
                     logging.warning("Client disconnected.")
                     connected_clients.pop(client_id)
@@ -69,12 +74,16 @@ async def handler(websocket):
     try:
         async for message in websocket:
             data = json.loads(message)
+            type = data.get("type")
+            logging.info(f"Type: {type}")
             
-            match data["type"]:
+            match type:
+                case 'create id':
+                    await create_id(websocket)
                 case 'disconnecting':
                     await disconnecting(data)
                 case 'leave room':
-                    room_id = data.get(room_id)
+                    room_id = data.get("roomId")
                     client_id = data.get("clientId")
                     await leave_room(room_id, client_id, websocket)
                 case 'kickout':
@@ -82,34 +91,40 @@ async def handler(websocket):
                 case 'message':
                     await handle_message(data)
                 case 'create or join':
-                    room_id = data.get(room_id)
+                    room_id = data.get("roomId")
                     client_id = data.get("clientId")
                     logging.log(f"Create or join room: {room_id}")
                     await join_room(room_id, client_id, websocket)
+                case 'audio':
+                    await get_audio(data)
                 case _:
                     break
-
-            
-            transcribed_text = ''
-
-
-            client_id = data.get('clientId')
-            room_id = data.get('roomId')
-            audio_data = bytes(data.get('audioData'))
-
-            await join_room(room_id, client_id, websocket)
-            
-            # Add audio chunk to the queue for processing
-            await audio_queue.put((client_id, room_id, audio_data))
-
 
     except websockets.ConnectionClosed:
         logging.info("Client disconnected exception caught.")
     finally:
         logging.info("Client disconnected gracefully. (in finally block)")
+        logging.info(f"Connected Clients: {connected_clients}")
+        logging.info(f"Rooms: {rooms}")
+        client_id = next((key for key, value in connected_clients.items() if value == websocket), None)
+        room_id = next((key for key, value in rooms.items() if client_id in value), None)
         connected_clients.pop(client_id)
         await leave_room(room_id, client_id, websocket)
         print(rooms)
+
+async def create_id(websocket):
+    id = None
+    while id is None or id in connected_clients:
+        id = uuid.uuid4()
+    await websocket.send({'message': id, 'type': 'get id'})
+
+async def get_audio(data):
+    client_id = data.get("clientId")
+    room_id = data.get("roomId")
+    audio_data = data.get("audioData")
+    
+    # Add audio chunk to the queue for processing
+    await audio_queue.put((client_id, room_id, audio_data))
 
 async def disconnecting(data):
     room_id = data.get("roomId")
@@ -142,23 +157,33 @@ async def handle_message(data):
     client_id = data.get("clientId")
     room_id = data.get("roomId")
     message_type = data.get("type")
+    message = data.get("message")
 
     if to_id:
         logging.log(f"From {client_id} to {to_id} {message_type}")
         await connected_clients.get(to_id).send({
-            "message": f"Message: {data}, {client_id}",
+            "message": { 
+                "message": message, 
+                "client_id": client_id,
+            },
             "type": "message"
         })
     elif room_id:
         logging.log(f"From {client_id} to room {room_id} {message_type}")
         await broadcast({
-            "message": f"Message {data} {client_id}",
+           "message": {
+                "message": message,
+                "client_id": client_id
+            },
             "type": "message",
         }, room_id)
     else:
         logging.log(f"From {client_id} to everyone {message_type}")
         await broadcast({
-            "message": f"Message {data} {client_id}",
+            "message": {
+                "message": message,
+                "client_id": client_id
+            },
             "type": "message",
         })
 
