@@ -9,7 +9,6 @@ from faster_whisper import WhisperModel
 
 class ASR:
     max_context_length = 200
-    audio_buffer: List[np.float32] = []
     context:str = ""
     unfinished_sentence = None
     previous_transcription = ""
@@ -18,14 +17,14 @@ class ASR:
         self.whisper_model = WhisperModel(model_size, device=device, compute_type=compute_type)
         self.max_context_length = max_context_length
         
-    def transcribe(self, audio_buffer: np.float32, context: str) -> str:  
+    def transcribe(self, audio_chunk: np.float32, context: str) -> str:  
         transcribed_text = ""
 
         segments, info = self.whisper_model.transcribe(
-            audio_buffer, 
+            audio_chunk, 
             language='en',
             beam_size=12,
-            initial_prompt=context
+            initial_prompt=context,
         )
         
         for segment in segments:
@@ -56,10 +55,6 @@ class ASR:
         self.update_context(transcribed_text)
         logging.info(f"[ASR] Updated context: {self.context}")
     
-        # Clear audio buffer after processing to avoid duplicating input
-        logging.info(f"[ASR] Clearing audio buffer {len(self.audio_buffer)}")
-        self.audio_buffer.clear()
-        logging.info(f"[ASR] Audio buffer cleared {len(self.audio_buffer)}")
         return transcribed_text
 
     def confirm_text(self, transcribed_text: str) -> str:
