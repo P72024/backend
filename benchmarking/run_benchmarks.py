@@ -9,8 +9,8 @@ from process_audio_benchmark import process_audio_benchmark
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 from ASR.ASR import ASR
 
-size="distil-large-v3"
-chunk_limit=32
+size="tiny.en"
+chunk_limit=16
 context_length_limit=120
 
 def get_absolute_path(relative_path):

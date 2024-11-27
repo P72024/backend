@@ -22,6 +22,7 @@ class ASR:
     silence_threshold: np.float64 = np.float64(0.042)
     local_agreement = LocalAgreement()
     context:str = ""
+    conf_limit = 0.87
     confirmed_sentences: List[str] = []
     min_chunk_size = 3
     min_chunk_size_default = 3
@@ -81,6 +82,37 @@ class ASR:
             transcription = self.process_audio()
 
         return transcription
+
+    def preprocess_text(self, text: str) -> List[str]:
+        """
+        Preprocess the text by:
+        - Removing punctuation (.,-?!)
+        - Splitting it into words
+        """
+        # Remove punctuation using regex
+        text = text.lower()
+        clean_text = re.sub(r"[.,!?-]", "", text)
+        # Split into words and return as a list
+        return clean_text.strip().split()
+
+    def get_overlap(self, transcription: str, previous_transcription: str) -> int:
+        """
+        Calculate the exact overlap between the end of `previous_transcription`
+        and the beginning of `transcription`, ignoring punctuation.
+        """
+        # Preprocess both texts
+        words1 = self.preprocess_text(previous_transcription)
+        words2 = self.preprocess_text(transcription)
+
+        # Find the maximum exact overlap
+        overlap = 0
+        max_overlap = min(len(words1), len(words2))  # Limit by the shorter list
+
+        for j in range(1, max_overlap + 1):
+            if words1[-j:] == words2[:j]:  # Compare the last `j` words of `words1` with the first `j` words of `words2`
+                overlap = j
+
+        return overlap
     
     def process_audio(self) -> str:
         combined_bytes = self.metadata.getvalue() + b''.join(bio.getvalue() for bio in self.audio_buffer)
@@ -102,13 +134,21 @@ class ASR:
             total_prob += prob
             transcribed_text += " " + text.strip()
             transcribed_text.strip()
-        if total_prob / len(transcribed_words) > 0.70:
-            self.update_context(transcribed_text)
-            yield transcribed_text
-            self.min_chunk_size = self.min_chunk_size_default
-            self.audio_buffer.clear()
-        else:
-            self.min_chunk_size += self.min_chunk_size_default
+        # print(f"total_prob: {total_prob}")
+        # print(f"transcribed_words: {len(transcribed_words)}")
+        if total_prob != 0 and len(transcribed_words) != 0:
+            if total_prob / len(transcribed_words) > self.conf_limit:
+                self.update_context(transcribed_text)
+                overlap = self.get_overlap(transcribed_text, self.previous_transcription)
+                confidence = total_prob/len(transcribed_words)
+                # print(f"Overlaps for previous: {overlap}")
+                yield (transcribed_text, overlap, confidence)
+                self.previous_transcription = transcribed_text
+                # print(f"[{total_prob/len(transcribed_words)}]: {transcribed_text}")
+                self.min_chunk_size = self.min_chunk_size_default
+                self.audio_buffer = self.audio_buffer[-5:]
+            else:
+                self.min_chunk_size += self.min_chunk_size_default
 
 
             # print(f"(INDEX: {idx}, TEXT: {text.strip()}, PROB: {prob}, STARTTIME: {start}, ENDTIME: {end})")
