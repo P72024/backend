@@ -228,7 +228,14 @@ class ASR:
     def update_context(self, new_text: str):
         """Update context with a sliding window to maintain continuity up to max_context_length words."""
         
-        new_text = " ".join(self.preprocess_text(new_text))
+        # new_text = " ".join(self.preprocess_text(new_text))
+        # Perform some preprocessing:
+        text = re.sub(r'[^a-zA-Z0-9,.?!\s]', '', new_text)
+        text = re.sub(r'[,.?!]+', lambda match: match.group(0)[0], text)
+    
+        # Normalize spaces by collapsing multiple spaces into a single one
+        text = re.sub(r'\s+', ' ', text).strip()
+        new_text = re.sub(r'', text).strip()
         # Add the new transcription to context, treating it as a moving shingle
         if(len((self.context + " " + new_text).split()) >= self.max_context_length):
             words_to_keep = ceil(self.max_context_length * 0.1)
