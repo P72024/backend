@@ -6,9 +6,18 @@ from io import BytesIO
 import uuid
 
 import websockets
+import logging
+import numpy as np
 
 from ASR.ASR import ASR
-import logging
+
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+
+# make an empty app.log file in the logs folder if it doesn't exist
+if not os.path.exists("logs/app.log"):
+    with open("logs/app.log", "w") as f:
+        f.write("")
 
 # Configure the logging settings
 logging.basicConfig(
@@ -24,7 +33,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize the ASR model
-_ASR = ASR("tiny", device="auto", compute_type="int8", max_context_length=100, chunk_limit=3)
+_ASR = ASR("tiny.en", device="auto", compute_type="int8", max_context_length=100)
 
 connected_clients = dict()
 rooms = dict()
@@ -34,39 +43,29 @@ room_admins = dict()
 audio_queue = asyncio.Queue()
 
 async def process_audio_chunks():
-    has_recieved_first_audio_chunk = False
-    
     while True:
         # Process each chunk in the queue one at a time
-        client_id, room_id, audio_data = await audio_queue.get() # Gets stuck here because queue is empty. Maybe reason?
-        
+        client_id, room_id, np_audio = await audio_queue.get()
 
-        # if not has_recieved_first_audio_chunk:
-        #     logging.info("Saving metadata for the first audio chunk.")
-        #     _ASR.save_metadata(audio_data)
-        #     has_recieved_first_audio_chunk = True
-        #     continue
+        logging.warning(f"Transcribing audio chunk for client {client_id} in room {room_id}")
+        transcribed_text = _ASR.process_audio(np_audio)
 
-        # logging.warning(f"Transcribing audio chunk for client {client_id} in room {room_id}")
-        # print(f"Transcribing audio chunk for client {client_id} in room {room_id}")
-        # transcribed_text = _ASR.receive_audio_chunk(audio_data)
-
-        # if transcribed_text:
-        #     logging.info(f"Transcribed for client {client_id} in room {room_id}: {transcribed_text}")
+        if transcribed_text:
+            logging.info(f"Transcribed for client {client_id} in room {room_id}: {transcribed_text}")
             
-        #     # Send the transcribed text to all connected clients in that room
-        #     for (client_id, websocket) in list(rooms[room_id]):
-        #         try:
-        #             logging.info(f"Sending transcribed text to client {client_id} in room {room_id}")
-        #             await websocket.send(json.dumps({
-        #                 "message": transcribed_text,
-        #                 "type": "transcribed text",
-        #             }))
-        #         except websockets.ConnectionClosed:
-        #             logging.warning("Client disconnected.")
-        #             connected_clients.pop(client_id)
-        #             await leave_room(room_id, client_id, websocket)
-        #             print(rooms)
+            # Send the transcribed text to all connected clients in that room
+            for (client_id, websocket) in list(rooms[room_id]):
+                try:
+                    logging.info(f"Sending transcribed text to client {client_id} in room {room_id}")
+                    await websocket.send(json.dumps({
+                        "message": transcribed_text,
+                        "type": "transcribed text",
+                    }))
+                except websockets.ConnectionClosed:
+                    logging.warning("Client disconnected.")
+                    connected_clients.pop(client_id)
+                    await leave_room(room_id, client_id, websocket)
+                    print(rooms)
 
 async def handler(websocket):
     logging.info("New client connected!")
@@ -117,12 +116,14 @@ async def create_id(websocket):
     await websocket.send(json.dumps({'message': id, 'type': 'get id'}))
 
 async def get_audio(data):
-    client_id = data.get("clientId")
-    room_id = data.get("roomId")
-    audio_data = data.get("audioData")
+    client_id = data.get('clientId')
+    room_id = data.get('roomId')
+    audio_data = data.get('audioData')
+    np_audio = np.array(audio_data, dtype=np.float32)
     
     # Add audio chunk to the queue for processing
-    await audio_queue.put((client_id, room_id, audio_data))
+    await audio_queue.put((client_id, room_id, np_audio))
+    logging.info(f"Added audio chunk to queue for client {client_id} in room {room_id}")
 
 async def disconnecting(data):
     room_id = data.get("roomId")
@@ -291,7 +292,7 @@ async def main():
     # Start the websocket server
     async with websockets.serve(handler, "0.0.0.0", 3000, ping_interval=20, ping_timeout=10):
         logging.info("Server is ready!")
-        
+
         await process_audio_chunks()
 
 if __name__ == "__main__":

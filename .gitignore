@@ -1,5 +1,6 @@
 venv
 share
+*.log
 
 # Byte-compiled / optimized / DLL files
 src/__pycache__/
