@@ -1,13 +1,13 @@
 import asyncio
 import json
+import logging
 import os
 import pickle
-from io import BytesIO
 import uuid
+from io import BytesIO
 
-import websockets
-import logging
 import numpy as np
+import websockets
 
 from ASR.ASR import ASR
 
@@ -33,7 +33,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize the ASR model
-_ASR = ASR("tiny.en", device="auto", compute_type="int8", max_context_length=100)
+_ASR = ASR("base.en", device="auto", compute_type="float32", max_context_length=100)
 
 connected_clients = dict()
 rooms = dict()

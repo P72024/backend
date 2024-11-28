@@ -1,20 +1,23 @@
-
-from io import BytesIO
 import logging
 import re
+from io import BytesIO
 from math import ceil
 from typing import List
-import scipy.io.wavfile as wavfile
+
 import numpy as np
+import scipy.io.wavfile as wavfile
+import soundfile as sf
 from faster_whisper import WhisperModel
 from pydub import AudioSegment
-import soundfile as sf
+from scipy.signal import butter, lfilter
+
 
 class ASR:
     max_context_length = 200
     context:str = ""
-    conf_limit = 0.5
+    conf_limit = 0.4
     confirmed_sentences: List[str] = []
+    silence_threshold = 0.04789
     # min_chunk_size = 3
     # min_chunk_size_default = 3
     unfinished_sentence = None
@@ -35,8 +38,8 @@ class ASR:
             beam_size=12,
             initial_prompt=context,
             condition_on_previous_text=True,
-            vad_filter=True,
-            vad_parameters={"threshold": 0.6, "min_silence_duration_ms": 300}, 
+            # vad_filter=True,
+            # vad_parameters={"threshold": 0.6, "min_silence_duration_ms": 300}, 
             word_timestamps=True,
         )
         
@@ -106,10 +109,9 @@ class ASR:
         # (sampleRate, sampleWidth, numChannels) = self.analyze(audio_chunk)
         # print(f"Sample Rate: {sampleRate}, Sample Width: {sampleWidth}, Number of Channels: {numChannels}")
 
-        # if(self.is_silent(audio_chunk)):
-        #     logging.info("Silence detected!")
-        #     self.audio_buffer.clear()
-        #     return ""
+        if(self.is_silent(audio_chunk)):
+            logging.info("Silence detected!")
+            return ("", 0)
         
         transcribed_words = self.transcribe(audio_chunk, self.context)
 
@@ -124,13 +126,14 @@ class ASR:
         # print(f"total_prob: {total_prob}")
         # print(f"transcribed_words: {len(transcribed_words)}")
         if total_prob != 0 and len(transcribed_words) != 0:
-            print(total_prob / len(transcribed_words))
+            logging.info(total_prob / len(transcribed_words))
             if total_prob / len(transcribed_words) > self.conf_limit:
                 self.update_context(transcribed_text)
                 # overlap = self.get_overlap(transcribed_text, self.previous_transcription)
                 confidence = total_prob/len(transcribed_words)
                 # print(f"Overlaps for previous: {overlap}")
                 self.previous_transcription = transcribed_text
+                logging.info("Text Transcribed!")
                 return (transcribed_text, confidence)
                 # print(f"[{total_prob/len(transcribed_words)}]: {transcribed_text}")
                 # self.min_chunk_size = self.min_chunk_size_default
@@ -247,26 +250,31 @@ class ASR:
         numchannels = audio.channels
         samplerate = audio.frame_rate
         return (samplerate, samplewidth, numchannels)
-
-    def is_silent(self, audio_bytes: np.float32) -> bool:
-        """Check if the audio chunk is silent based on RMS energy."""
-        # Reset buffer and read audio data
-
-        audio : AudioSegment = AudioSegment.from_file(BytesIO(audio_bytes.tobytes()), format='webm', codec='opus')
-        ogg_audio = BytesIO()
-        audio.export(ogg_audio, format='ogg')
-        audio_bytes = ogg_audio
-        audio_bytes.seek(0)
-        audio_data, _ = sf.read(audio_bytes)
-
-        # Calculate RMS energy
-        rms_energy = np.sqrt(np.mean(np.square(audio_data)))
         
-        # print(f"[RMS ENERGY] {rms_energy}")
-        # logging.info(f"[RMS ENERGY] {rms_energy}")
-        
-        # Check if energy is below the silence threshold
-        return rms_energy < self.silence_threshold
+    def highpass_filter(self, audio_chunk: np.ndarray, cutoff: float = 100.0, order: int = 4) -> np.ndarray:
+            """Apply a highpass filter to the audio."""
+            nyquist = 0.5 * 44100
+            normalized_cutoff = cutoff / nyquist
+            b, a = butter(order, normalized_cutoff, btype='high', analog=False)
+            return lfilter(b, a, audio_chunk)
+
+    def is_silent(self, audio_chunk: np.ndarray) -> bool:
+            """
+            Check if the audio chunk is silent based on RMS energy after
+            applying a highpass filter to remove low-frequency noise.
+            """
+            # Apply highpass filter
+            filtered_audio = self.highpass_filter(audio_chunk)
+
+            # Calculate RMS energy
+            rms_energy = np.sqrt(np.mean(np.square(filtered_audio)))
+
+            # Log energy levels
+            print(f"[RMS ENERGY] {rms_energy}")
+            logging.info(f"[RMS ENERGY] {rms_energy}")
+
+            # Check if energy is below the silence threshold
+            return rms_energy < self.silence_threshold
 
     def save_audio_to_file(self, audio_array, sample_rate, filename):
         # Ensure the array is float32
