@@ -11,6 +11,14 @@ import numpy as np
 
 from ASR.ASR import ASR
 
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+
+# make an empty app.log file in the logs folder if it doesn't exist
+if not os.path.exists("logs/app.log"):
+    with open("logs/app.log", "w") as f:
+        f.write("")
+
 # Configure the logging settings
 logging.basicConfig(
     level=logging.INFO,  # Set the minimum log level to INFO
