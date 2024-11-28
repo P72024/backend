@@ -1,61 +1,44 @@
 
+from io import BytesIO
 import logging
 import re
-import wave
-from asyncio import sleep
-from io import BytesIO
 from math import ceil
 from typing import List
-
+import scipy.io.wavfile as wavfile
 import numpy as np
-import soundfile as sf
 from faster_whisper import WhisperModel
 from pydub import AudioSegment
-
-from .LocalAgreement import LocalAgreement
-
+import soundfile as sf
 
 class ASR:
     max_context_length = 200
-    metadata: BytesIO = BytesIO()
-    audio_buffer: List[BytesIO] = []
-    silence_threshold: np.float64 = np.float64(0.042)
-    local_agreement = LocalAgreement()
     context:str = ""
-    conf_limit = 0.87
+    conf_limit = 0.5
     confirmed_sentences: List[str] = []
-    min_chunk_size = 3
-    min_chunk_size_default = 3
+    # min_chunk_size = 3
+    # min_chunk_size_default = 3
     unfinished_sentence = None
-    min_silence_duration_ms = 300  # Minimum duration of silence to consider it as non-speech
-    previous_buffer = BytesIO()
     previous_transcription = ""
     idx_zero_fails = 0
     idx_zero_fail_limit = 3
 
-    def __init__ (self, model_size: str, device="auto", compute_type = "float16", max_context_length=200, chunk_limit=48):
+    def __init__ (self, model_size: str, device="auto", compute_type = "float16", max_context_length=200):
         self.whisper_model = WhisperModel(model_size, device=device, compute_type=compute_type)
-        self.min_chunk_size = chunk_limit
-        self.min_chunk_size_default = chunk_limit
+        # self.min_chunk_size = 1
+        # self.min_chunk_size_default = 1
         self.max_context_length = max_context_length
         
-    def transcribe(self, audio_buffer: BytesIO, context: str) -> str:
-        # print(audio_buffer.getbuffer().nbytes)
+    def transcribe(self, audio_chunk: np.float32, context: str) -> str:  
 
-        # audio_buffer.seek(0)
-        # # a lil debug tang
-        # with open("temp.webm", 'wb') as f:
-        #     f.write(audio_buffer.getvalue())
-
-        audio_buffer.seek(0)
-        
-        segments, _ = self.whisper_model.transcribe(audio_buffer, 
-                                                        language='en',
-                                                        beam_size=12,
-                                                        initial_prompt=context,
-                                                        condition_on_previous_text=True,
-                                                        vad_filter=True,
-                                                        vad_parameters={"threshold": 0.6, "min_silence_duration_ms": 300}, word_timestamps=True)
+        segments, _ = self.whisper_model.transcribe(audio_chunk, 
+            language='en',
+            beam_size=12,
+            initial_prompt=context,
+            condition_on_previous_text=True,
+            vad_filter=True,
+            vad_parameters={"threshold": 0.6, "min_silence_duration_ms": 300}, 
+            word_timestamps=True,
+        )
         
         transcribed_words = []
         for segment in segments:
@@ -65,24 +48,29 @@ class ASR:
 
         return transcribed_words
     
-    def save_metadata(self, metadata):
-        # print("saving metadata")
-        # print(type(metadata))
-        self.metadata.write(metadata)
-        self.metadata.seek(0)  # Reset buffer's position to the beginning
+    
+    def process_audio(self, audio_chunk: np.float32) -> str:
+        logging.info("[ASR] Processing audio chunk")
+        transcribed_text = self.transcribe(audio_chunk, self.context)
+        if "..." in transcribed_text or '- ' in transcribed_text:
+            print('something is unfinished')
+            self.unfinished_sentence = transcribed_text.replace("...", "")  # Remove trailing ellipsis
+            self.unfinished_sentence = transcribed_text.replace("- ", "")
+            return ""
+        
+        # If there was an unfinished sentence, merge it with the new transcription
+        if self.unfinished_sentence:
+            transcribed_text = transcribed_text
+            self.unfinished_sentence = None  # Reset unfinished sentence
+        transcribed_text = transcribed_text.lstrip()
+        pattern = r'[^a-zA-Z0-9.,\-/?! ]'
+        transcribed_text = re.sub(pattern, '', transcribed_text)
+        confirmed_text = self.confirm_text(transcribed_text)
+        print(f"[CONFIRMED TRANSCRIPTION] {confirmed_text}")
 
-    def receive_audio_chunk(self, audio_chunk):
-        # print("recieving audio chunk")
-        transcription = ""
-        self.audio_buffer.append(BytesIO(audio_chunk))
-
-        # print("audio buffer length: ", len(self.audio_buffer))
-        # print("min chunk size: ", self.min_chunk_size)
-        if len(self.audio_buffer) > self.min_chunk_size:
-            transcription = self.process_audio()
-
-        return transcription
-
+        self.update_context(transcribed_text)
+        logging.info(f"[ASR] Updated context: {self.context}")
+    
     def preprocess_text(self, text: str) -> List[str]:
         """
         Preprocess the text by:
@@ -114,20 +102,19 @@ class ASR:
 
         return overlap
     
-    def process_audio(self) -> str:
-        combined_bytes = self.metadata.getvalue() + b''.join(bio.getvalue() for bio in self.audio_buffer)
-        combined_bytes_io = BytesIO(combined_bytes)
-        (sampleRate, sampleWidth, numChannels) = self.analyze(combined_bytes_io)
+    def process_audio(self, audio_chunk: np.float32):
+        # (sampleRate, sampleWidth, numChannels) = self.analyze(audio_chunk)
         # print(f"Sample Rate: {sampleRate}, Sample Width: {sampleWidth}, Number of Channels: {numChannels}")
 
-        if(self.is_silent(combined_bytes_io)):
-            logging.info("Silence detected!")
-            self.audio_buffer.clear()
-            return ""
-        combined_bytes_io.seek(0)  # Reset for reading
-        transcribed_words = self.transcribe(combined_bytes_io, self.context)
-        start_audio_time_split : int = 0
-        end_audio_time_split : int = 0
+        # if(self.is_silent(audio_chunk)):
+        #     logging.info("Silence detected!")
+        #     self.audio_buffer.clear()
+        #     return ""
+        
+        transcribed_words = self.transcribe(audio_chunk, self.context)
+
+        # start_audio_time_split : int = 0
+        # end_audio_time_split : int = 0
         transcribed_text = ""
         total_prob = 0
         for idx, (text, start, end, prob) in enumerate(transcribed_words):
@@ -137,18 +124,19 @@ class ASR:
         # print(f"total_prob: {total_prob}")
         # print(f"transcribed_words: {len(transcribed_words)}")
         if total_prob != 0 and len(transcribed_words) != 0:
+            print(total_prob / len(transcribed_words))
             if total_prob / len(transcribed_words) > self.conf_limit:
                 self.update_context(transcribed_text)
-                overlap = self.get_overlap(transcribed_text, self.previous_transcription)
+                # overlap = self.get_overlap(transcribed_text, self.previous_transcription)
                 confidence = total_prob/len(transcribed_words)
                 # print(f"Overlaps for previous: {overlap}")
-                yield (transcribed_text, overlap, confidence)
                 self.previous_transcription = transcribed_text
+                return (transcribed_text, confidence)
                 # print(f"[{total_prob/len(transcribed_words)}]: {transcribed_text}")
-                self.min_chunk_size = self.min_chunk_size_default
-                self.audio_buffer = self.audio_buffer[-5:]
-            else:
-                self.min_chunk_size += self.min_chunk_size_default
+                # self.min_chunk_size = self.min_chunk_size_default
+                # self.audio_buffer = self.audio_buffer[-5:]
+            # else:
+            #     self.min_chunk_size += self.min_chunk_size_default
 
 
             # print(f"(INDEX: {idx}, TEXT: {text.strip()}, PROB: {prob}, STARTTIME: {start}, ENDTIME: {end})")
@@ -189,7 +177,7 @@ class ASR:
     
         # Clear audio buffer after processing to avoid duplicating input
         # self.audio_buffer.clear()
-        # return transcribed_text
+        return ("",0)
 
     def remove_time_frame(self, start_time: int, end_time: int, sampleRate, sampleWidth, numChannels):
         print(f"Now removing time frame from Start: {start_time} till End: {end_time}")
@@ -250,27 +238,26 @@ class ASR:
         # Debug statement to check current context
         # print(f"Updated Context (Shingle): {self.context}")
     
-    def analyze(self, audio_bytes: BytesIO) -> bool:
+    def analyze(self, audio_chunk: np.float32) -> bool:
         """Check if the audio chunk is silent based on RMS energy."""
         # Reset buffer and read audio data
 
-        audio : AudioSegment = AudioSegment.from_file(audio_bytes, format='webm', codec='opus')
+        audio : AudioSegment = AudioSegment.from_file(audio_chunk, format='webm', codec='opus')
         samplewidth = audio.sample_width
         numchannels = audio.channels
         samplerate = audio.frame_rate
-        audio_bytes.seek(0)
         return (samplerate, samplewidth, numchannels)
 
-    def is_silent(self, audio_bytes: BytesIO) -> bool:
+    def is_silent(self, audio_bytes: np.float32) -> bool:
         """Check if the audio chunk is silent based on RMS energy."""
         # Reset buffer and read audio data
 
-        audio : AudioSegment = AudioSegment.from_file(audio_bytes, format='webm', codec='opus')
+        audio : AudioSegment = AudioSegment.from_file(BytesIO(audio_bytes.tobytes()), format='webm', codec='opus')
         ogg_audio = BytesIO()
         audio.export(ogg_audio, format='ogg')
         audio_bytes = ogg_audio
         audio_bytes.seek(0)
-        audio_data, sample_rate = sf.read(audio_bytes)
+        audio_data, _ = sf.read(audio_bytes)
 
         # Calculate RMS energy
         rms_energy = np.sqrt(np.mean(np.square(audio_data)))
@@ -280,3 +267,18 @@ class ASR:
         
         # Check if energy is below the silence threshold
         return rms_energy < self.silence_threshold
+
+    def save_audio_to_file(self, audio_array, sample_rate, filename):
+        # Ensure the array is float32
+        audio_array = audio_array.astype(np.float32)
+        
+        # Normalize to prevent clipping (optional)
+        max_val = np.max(np.abs(audio_array))
+        if max_val > 0:
+            audio_array = audio_array / max_val
+        
+        # Scale to int16 range for WAV file writing
+        scaled_audio = np.int16(audio_array * 32767)
+        
+        # Write to file
+        wavfile.write(filename, sample_rate, scaled_audio)
