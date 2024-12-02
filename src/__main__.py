@@ -33,7 +33,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize the ASR model
-_ASR = ASR("tiny.en", device="auto", compute_type="int8", max_context_length=100)
+_ASR = ASR("tiny.en", device="auto", compute_type="int8", max_context_length=100, num_workers=2)
 
 connected_clients = dict()
 rooms = dict()
@@ -48,7 +48,7 @@ async def process_audio_chunks():
         client_id, room_id, np_audio = await audio_queue.get()
 
         logging.warning(f"Transcribing audio chunk for client {client_id} in room {room_id}")
-        transcribed_text = _ASR.process_audio(np_audio)
+        transcribed_text = _ASR.process_audio(np_audio, room_id)
 
         if transcribed_text:
             logging.info(f"Transcribed for client {client_id} in room {room_id}: {transcribed_text}")
@@ -63,7 +63,8 @@ async def process_audio_chunks():
                     }))
                 except websockets.ConnectionClosed:
                     logging.warning("Client disconnected.")
-                    connected_clients.pop(client_id)
+                    if client_id in connected_clients:
+                        connected_clients.pop(client_id)
                     await leave_room(room_id, client_id, websocket)
                     print(rooms)
 
@@ -104,7 +105,8 @@ async def handler(websocket):
         logging.info(f"Rooms: {rooms}")
         client_id = next((key for key, value in connected_clients.items() if value == websocket), None)
         room_id = next((key for key, value in rooms.items() if client_id in value), None)
-        connected_clients.pop(client_id)
+        if client_id in connected_clients:
+            connected_clients.pop(client_id)
         await leave_room(room_id, client_id, websocket)
         print(rooms)
 
@@ -245,7 +247,8 @@ async def join_room(room_id, client_id, websocket):
 
 async def leave_room(room_id, client_id, websocket):
     if room_id in rooms:
-        rooms[room_id].remove((client_id, websocket))
+        if (client_id, websocket) in rooms[room_id]:
+            rooms[room_id].remove((client_id, websocket))
         logging.info(f'Client {client_id} left room {room_id}')
         await websocket.send(json.dumps({
             "message": room_id,

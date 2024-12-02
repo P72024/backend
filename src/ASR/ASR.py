@@ -9,12 +9,12 @@ from faster_whisper import WhisperModel
 
 class ASR:
     max_context_length = 200
-    context:str = ""
-    unfinished_sentence = None
-    previous_transcription = ""
+    context: str = dict()
+    unfinished_sentence = dict()
+    previous_transcription = dict()
 
-    def __init__ (self, model_size: str, device="auto", compute_type = "float16", max_context_length=200):
-        self.whisper_model = WhisperModel(model_size, device=device, compute_type=compute_type)
+    def __init__ (self, model_size: str, device="auto", compute_type = "float16", max_context_length=200, num_workers = 1):
+        self.whisper_model = WhisperModel(model_size, device=device, compute_type=compute_type, num_workers=num_workers)
         self.max_context_length = max_context_length
         
     def transcribe(self, audio_chunk: np.float32, context: str) -> str:  
@@ -33,36 +33,36 @@ class ASR:
         return transcribed_text
     
     
-    def process_audio(self, audio_chunk: np.float32) -> str:
+    def process_audio(self, audio_chunk: np.float32, room_id) -> str:
         logging.info("[ASR] Processing audio chunk")
-        transcribed_text = self.transcribe(audio_chunk, self.context)
+        transcribed_text = self.transcribe(audio_chunk, self.context[room_id] if room_id in self.context else "")
         if "..." in transcribed_text or '- ' in transcribed_text:
             print('something is unfinished')
-            self.unfinished_sentence = transcribed_text.replace("...", "")  # Remove trailing ellipsis
-            self.unfinished_sentence = transcribed_text.replace("- ", "")
+            self.unfinished_sentence[room_id] = transcribed_text.replace("...", "")  # Remove trailing ellipsis
+            self.unfinished_sentence[room_id] = transcribed_text.replace("- ", "")
             return ""
         
         # If there was an unfinished sentence, merge it with the new transcription
-        if self.unfinished_sentence:
+        if room_id in self.unfinished_sentence:
             transcribed_text = transcribed_text
-            self.unfinished_sentence = None  # Reset unfinished sentence
+            self.unfinished_sentence[room_id] = None  # Reset unfinished sentence
         transcribed_text = transcribed_text.lstrip()
         pattern = r'[^a-zA-Z0-9.,\-/?! ]'
         transcribed_text = re.sub(pattern, '', transcribed_text)
-        confirmed_text = self.confirm_text(transcribed_text)
+        confirmed_text = self.confirm_text(transcribed_text, room_id)
         print(f"[CONFIRMED TRANSCRIPTION] {confirmed_text}")
 
-        self.update_context(transcribed_text)
-        logging.info(f"[ASR] Updated context: {self.context}")
+        self.update_context(transcribed_text, room_id)
+        logging.info(f"[ASR] Updated context: {self.context[room_id] if room_id in self.context else ''}")
     
         return transcribed_text
 
-    def confirm_text(self, transcribed_text: str) -> str:
+    def confirm_text(self, transcribed_text: str, room_id) -> str:
         # Split the current and previous transcription into words
         new_words = transcribed_text.split()
-        prev_words = self.previous_transcription.split()
+        prev_words = self.previous_transcription[room_id].split() if room_id in self.previous_transcription else ""
         if len(prev_words) == 0:
-            self.previous_transcription = ' '.join(new_words)
+            self.previous_transcription[room_id] = ' '.join(new_words)
             return ' '.join(new_words)
         # Initialize a list to store matching words
         matching_words = []
@@ -79,26 +79,26 @@ class ASR:
                 matching_words.append(word)
 
         # Update previous transcription for future comparisons
-        if self.previous_transcription == "":
-            self.previous_transcription = transcribed_text
+        if room_id not in self.previous_transcription or self.previous_transcription[room_id] == "":
+            self.previous_transcription[room_id] = transcribed_text
         else:
-            self.previous_transcription += " " + transcribed_text
+            self.previous_transcription[room_id] += " " + transcribed_text
 
         # Join and return the matching prefix as a single string
         return ' '.join(matching_words)    
 
-    def update_context(self, new_text: str):
+    def update_context(self, new_text: str, room_id):
         """Update context with a sliding window to maintain continuity up to max_context_length words."""
         
         # Add the new transcription to context, treating it as a moving shingle
-        if(len((self.context + " " + new_text).split()) >= self.max_context_length):
+        if(room_id in self.context and len((self.context[room_id] + " " + new_text).split()) >= self.max_context_length):
             words_to_keep = ceil(self.max_context_length * 0.1)
-            self.context = ' '.join(self.context.split()[-words_to_keep:]) + " " + new_text
+            self.context[room_id] = ' '.join(self.context[room_id].split()[-words_to_keep:]) + " " + new_text
         else:
-            if self.context == '':
-                self.context = new_text
+            if room_id not in self.context or self.context[room_id] == '':
+                self.context[room_id] = new_text
             else:
-                self.context += " " + new_text
+                self.context[room_id] += " " + new_text
         
 
     def merge_sentences(self, unfinished: str, completed: str) -> str:
