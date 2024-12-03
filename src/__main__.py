@@ -9,6 +9,8 @@ import websockets
 import logging
 import numpy as np
 
+import time
+
 from ASR.ASR import ASR
 
 if not os.path.exists("logs"):
@@ -45,7 +47,7 @@ audio_queue = asyncio.Queue()
 async def process_audio_chunks():
     while True:
         # Process each chunk in the queue one at a time
-        client_id, room_id, np_audio = await audio_queue.get()
+        client_id, room_id, np_audio, sentAt, receivedAt = await audio_queue.get()
 
         logging.warning(f"Transcribing audio chunk for client {client_id} in room {room_id}")
         transcribed_text = _ASR.process_audio(np_audio)
@@ -60,6 +62,9 @@ async def process_audio_chunks():
                     await websocket.send(json.dumps({
                         "message": transcribed_text,
                         "type": "transcribed text",
+                        "sentAt": sentAt,
+                        "receivedAt": receivedAt,
+                        "processingTime": unix_seconds_to_ms(time.time()) - receivedAt
                     }))
                 except websockets.ConnectionClosed:
                     logging.warning("Client disconnected.")
@@ -95,6 +100,8 @@ async def handler(websocket):
                     await join_room(room_id, client_id, websocket)
                 case 'audio':
                     await get_audio(data)
+                case 'ping':
+                    await websocket.send(json.dumps(data))
                 case _:
                     logging.warning(f"Incorrect type on message: {data}")
 
@@ -119,11 +126,18 @@ async def get_audio(data):
     client_id = data.get('clientId')
     room_id = data.get('roomId')
     audio_data = data.get('audioData')
+    sentAt = data.get('sentAt')
+    receivedAt = unix_seconds_to_ms(time.time())
     np_audio = np.array(audio_data, dtype=np.float32)
     
     # Add audio chunk to the queue for processing
-    await audio_queue.put((client_id, room_id, np_audio))
+    await audio_queue.put((client_id, room_id, np_audio, sentAt, receivedAt))
     logging.info(f"Added audio chunk to queue for client {client_id} in room {room_id}")
+
+# In js we use Date.now() to get the current time in milliseconds
+# In python we use time.time() to get the current time in seconds
+# So we need to convert the seconds to milliseconds
+unix_seconds_to_ms = lambda seconds: seconds * 1000
 
 async def disconnecting(data):
     room_id = data.get("roomId")
