@@ -10,7 +10,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src'
 from ASR.ASR import ASR
 
 size="distil-large-v3"
-chunk_limit=40
 context_length_limit=120
 
 def get_absolute_path(relative_path):
@@ -23,7 +22,7 @@ async def run_benchmarks():
     # await process_audio_benchmark("./testfiles/test2.pkl", "./testfiles/test2_meta.pkl", "./testfiles/test2.txt", asr)
     # await process_audio_benchmark("./testfiles/test2.pkl", "./testfiles/test2_meta.pkl", "testfiles/test2_transcription.txt", asr)
     # await process_audio_benchmark(f"{get_absolute_path('testfiles/ozzy.pkl')}", f"{get_absolute_path('testfiles/ozzy_meta.pkl')}", f"{get_absolute_path('testfiles/ozzy.txt')}", size, context_length_limit, chunk_limit)
-    await process_audio_benchmark(f"{get_absolute_path('testfiles/peter2.pkl')}", f"{get_absolute_path('testfiles/peter2_meta.pkl')}", f"{get_absolute_path('testfiles/peter2.txt')}", size, context_length_limit, chunk_limit)
+    await process_audio_benchmark(f"{get_absolute_path('testfiles/peter2.pkl')}", f"{get_absolute_path('testfiles/peter2.txt')}", size, context_length_limit)
     # await process_audio_benchmark("./testfiles/peter.pkl", "./testfiles/peter_meta.pkl", "./testfiles/peter.txt", size)
     # await process_audio_benchmark("./testfiles/casper.pkl", "./testfiles/casper_meta.pkl", "./testfiles/casper.txt", size)
     # await process_audio_benchmark("./testfiles/frederik.pkl", "./testfiles/frederik_meta.pkl", "./testfiles/frederik.txt", size)
