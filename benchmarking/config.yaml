@@ -1,0 +1,38 @@
+grid_search:
+  parameters:
+    model_type: 
+      - "tiny.en"
+      - "large-v3"
+    beam_size: 
+      - 3
+      - 5
+      - 7
+    context: 
+      - "true"
+      - "false"
+    confidence_score: 
+      - 0.6
+      - 0.7
+      - 0.8
+    tweaked_model:
+      - "true"
+      - "false"
+    workers:
+      - 1
+      - 2
+      - 3
+    VAD_filter_threshold:
+      - 0.3
+      - 0.5
+      - 0.7
+    min_chunk_size:
+      - 3
+      - 6
+      - 9
+      - 12
+      - 15
+
+experiment_setup:
+  output_dir: "results/"
+  num_trials: 1
+  random_seed: 42
