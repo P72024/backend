@@ -15,7 +15,7 @@ class ASR:
     unfinished_sentence = dict()
     previous_transcription = dict()
 
-    def __init__ (self, model_size: str, device="auto", compute_type = "float16", max_context_length=200, num_workers = 1):
+    def __init__ (self, model_size: str, device="auto", compute_type = "float16", max_context_length=50, num_workers = 1):
         self.whisper_model = WhisperModel(model_size, device=device, compute_type=compute_type, num_workers=num_workers)
         self.max_context_length = max_context_length
         
@@ -25,12 +25,15 @@ class ASR:
         segments, info = self.whisper_model.transcribe(
             audio_chunk, 
             language='en',
-            beam_size=2,
+            beam_size=5,
             initial_prompt=context,
-            condition_on_previous_text=True,
-            max_new_tokens=130,
-            compression_ratio_threshold=1.5,
-            temperature=0.3
+            condition_on_previous_text=False,
+            temperature= 0.2,
+            hallucination_silence_threshold = 0.3,
+            max_new_tokens= 90,
+            no_repeat_ngram_size=1,  # Prevent repetition of 3-gram sequences
+            repetition_penalty=1.5  # Apply a moderate penalty to repeated words
+            
         )
         
         for segment in segments:
