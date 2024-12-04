@@ -1,11 +1,12 @@
 
 import logging
-import re
 from math import ceil
-from typing import List
+import time
 import scipy.io.wavfile as wavfile
 import numpy as np
 from faster_whisper import WhisperModel
+
+from Util import unix_seconds_to_ms
 
 class ASR:
     max_context_length = 200
@@ -33,29 +34,21 @@ class ASR:
         return transcribed_text
     
     
-    def process_audio(self, audio_chunk: np.float32) -> str:
+    def process_audio(self, audio_chunk: np.float32) -> tuple[str, str, str]:
         logging.info("[ASR] Processing audio chunk")
-        transcribed_text = self.transcribe(audio_chunk, self.context)
-        if "..." in transcribed_text or '- ' in transcribed_text:
-            print('something is unfinished')
-            self.unfinished_sentence = transcribed_text.replace("...", "")  # Remove trailing ellipsis
-            self.unfinished_sentence = transcribed_text.replace("- ", "")
-            return ""
-        
-        # If there was an unfinished sentence, merge it with the new transcription
-        if self.unfinished_sentence:
-            transcribed_text = transcribed_text
-            self.unfinished_sentence = None  # Reset unfinished sentence
-        transcribed_text = transcribed_text.lstrip()
-        pattern = r'[^a-zA-Z0-9.,\-/?! ]'
-        transcribed_text = re.sub(pattern, '', transcribed_text)
-        confirmed_text = self.confirm_text(transcribed_text)
-        print(f"[CONFIRMED TRANSCRIPTION] {confirmed_text}")
 
+        transcribe_start_time = time.time()
+        transcribed_text = self.transcribe(audio_chunk, self.context)
+        transcribe_time = unix_seconds_to_ms(time.time() - transcribe_start_time)
+
+        update_context_start_time = time.time()
         self.update_context(transcribed_text)
+        update_context_time = unix_seconds_to_ms(time.time() - update_context_start_time)
+
         logging.info(f"[ASR] Updated context: {self.context}")
     
-        return transcribed_text
+        logging.info(f"[ASR] Finished processing audio chunk, transcribe time: {transcribe_time} ms, update context time: {update_context_time} ms")
+        return (transcribed_text, transcribe_time, update_context_time)
 
     def confirm_text(self, transcribed_text: str) -> str:
         # Split the current and previous transcription into words

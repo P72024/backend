@@ -13,6 +13,8 @@ import time
 
 from ASR.ASR import ASR
 
+from Util import unix_seconds_to_ms
+
 if not os.path.exists("logs"):
     os.makedirs("logs")
 
@@ -49,23 +51,35 @@ async def process_audio_chunks():
         # Process each chunk in the queue one at a time
         client_id, room_id, np_audio, sentAt, receivedAt = await audio_queue.get()
 
+        audio_queue_wait_time = unix_seconds_to_ms(time.time()) - receivedAt
+        processing_start_time = unix_seconds_to_ms(time.time())
+
         logging.warning(f"Transcribing audio chunk for client {client_id} in room {room_id}")
-        transcribed_text = _ASR.process_audio(np_audio)
+        (transcribed_text, transcribe_time, update_context_time) = _ASR.process_audio(np_audio)
 
         if transcribed_text:
-            logging.info(f"Transcribed for client {client_id} in room {room_id}: {transcribed_text}")
+            logging.info(f"Transcribed for client {client_id} in room {room_id}: {transcribed_text}. Took {unix_seconds_to_ms(time.time()) - processing_start_time}ms")
             
             # Send the transcribed text to all connected clients in that room
             for (client_id, websocket) in list(rooms[room_id]):
                 try:
+                    websocket_send_start_time = unix_seconds_to_ms(time.time())
                     logging.info(f"Sending transcribed text to client {client_id} in room {room_id}")
+
                     await websocket.send(json.dumps({
                         "message": transcribed_text,
                         "type": "transcribed text",
                         "sentAt": sentAt,
                         "receivedAt": receivedAt,
-                        "processingTime": unix_seconds_to_ms(time.time()) - receivedAt
+                        "processingTime": {
+                            "total": unix_seconds_to_ms(time.time()) - processing_start_time,
+                            "transcription_time": transcribe_time,
+                            "update_context_time": update_context_time,
+                        },
+                        "queueWaitTime": audio_queue_wait_time,
                     }))
+
+                    logging.info(f"Sent transcribed text to client {client_id} in room {room_id}. Took {unix_seconds_to_ms(time.time()) - websocket_send_start_time}ms")
                 except websockets.ConnectionClosed:
                     logging.warning("Client disconnected.")
                     connected_clients.pop(client_id)
@@ -133,11 +147,6 @@ async def get_audio(data):
     # Add audio chunk to the queue for processing
     await audio_queue.put((client_id, room_id, np_audio, sentAt, receivedAt))
     logging.info(f"Added audio chunk to queue for client {client_id} in room {room_id}")
-
-# In js we use Date.now() to get the current time in milliseconds
-# In python we use time.time() to get the current time in seconds
-# So we need to convert the seconds to milliseconds
-unix_seconds_to_ms = lambda seconds: seconds * 1000
 
 async def disconnecting(data):
     room_id = data.get("roomId")
@@ -304,7 +313,7 @@ async def save_metadata(data):
 
 async def main():
     # Start the websocket server
-    async with websockets.serve(handler, "0.0.0.0", 3000, ping_interval=20, ping_timeout=10):
+    async with websockets.serve(handler, "0.0.0.0", 3000):
         logging.info("Server is ready!")
 
         await process_audio_chunks()
