@@ -42,12 +42,27 @@ room_admins = dict()
 # Queue for managing audio chunks from clients
 audio_queue = asyncio.Queue()
 
+async def process_audio_chunks_to_pkl():
+    while True:
+        _, _, np_audio = await audio_queue.get()
+
+        logging.info("Processing audio chunk")
+
+        try:
+            await save_chunk(np_audio)
+
+            logging.info("Audio chunk saved successfully")
+
+        except Exception as e:
+            logging.error(f"Error saving audio chunk: {e}")
+
+
 async def process_audio_chunks():
     while True:
         # Process each chunk in the queue one at a time
         client_id, room_id, np_audio = await audio_queue.get()
 
-        logging.warning(f"Transcribing audio chunk for client {client_id} in room {room_id}")
+        logging.info(f"Transcribing audio chunk for client {client_id} in room {room_id}")
         transcribed_text = _ASR.process_audio(np_audio)
 
         if transcribed_text:
@@ -262,38 +277,33 @@ async def leave_room(room_id, client_id, websocket):
         
         logging.info(f"Rooms: {rooms}")
 
+    
+def get_absolute_path(relative_path):
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), relative_path)
+
+
 async def save_chunk(data):
     # Check if file exists, and initialize it if not
-    if os.path.exists('../benchmarking/testfiles/frederik.pkl'):
-        with open('../benchmarking/testfiles/frederik.pkl', 'rb') as f:
+    file_path = get_absolute_path('../benchmarking/testfiles/zesty_testy.pkl')
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    
+
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as f:
             array = pickle.load(f)
     else:
-        array = []
-
-    # Append the new data and save back
+        array = [] 
     array.append(data)
-    with open('../benchmarking/testfiles/frederik.pkl', 'wb') as f:
+
+    with open(file_path, 'wb') as f:
         pickle.dump(array, f)
 
-async def save_metadata(data):
-    # Check if file exists, and initialize it if not
-    if os.path.exists('../benchmarking/testfiles/frederik_meta.pkl'):
-        with open('../benchmarking/testfiles/frederik_meta.pkl', 'rb') as f:
-            array = pickle.load(f)
-    else:
-        array = []
-
-    # Append the new data and save back
-    array.append(data)
-    with open('../benchmarking/testfiles/frederik_meta.pkl', 'wb') as f:
-        pickle.dump(array, f)# Start WebSocket server
 
 async def main():
-    # Start the websocket server
     async with websockets.serve(handler, "0.0.0.0", 3000, ping_interval=20, ping_timeout=10):
         logging.info("Server is ready!")
 
-        await process_audio_chunks()
+        await process_audio_chunks_to_pkl()
 
 if __name__ == "__main__":
     asyncio.run(main())
