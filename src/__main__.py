@@ -37,7 +37,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize the ASR model
-_ASR = ASR("distil-large-v3", device="auto", compute_type="float32", max_context_length=50, num_workers=1)
+_ASR = ASR("distil-large-v3", device="gpu", compute_type="float16", max_context_length=100, num_workers=2)
 
 connected_clients = dict()
 rooms = dict()
