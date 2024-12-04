@@ -1,6 +1,7 @@
 
 import logging
 from math import ceil
+import re
 import time
 import scipy.io.wavfile as wavfile
 import numpy as np
@@ -24,8 +25,12 @@ class ASR:
         segments, info = self.whisper_model.transcribe(
             audio_chunk, 
             language='en',
-            beam_size=12,
+            beam_size=2,
             initial_prompt=context,
+            condition_on_previous_text=True,
+            max_new_tokens=130,
+            compression_ratio_threshold=1.5,
+            temperature=0.3
         )
         
         for segment in segments:
@@ -40,13 +45,26 @@ class ASR:
         transcribed_text = self.transcribe(audio_chunk, self.context[room_id] if room_id in self.context else "")
         transcribe_time = unix_seconds_to_ms(time.time() - transcribe_start_time)
     
+        if "..." in transcribed_text or '- ' in transcribed_text:
+            print('something is unfinished')
+            self.unfinished_sentence[room_id] = transcribed_text.replace("...", "")  # Remove trailing ellipsis
+            self.unfinished_sentence[room_id] = transcribed_text.replace("- ", "")
+            return ("", transcribe_time, 0)
+        
+        # If there was an unfinished sentence, merge it with the new transcription
+        if room_id in self.unfinished_sentence:
+            transcribed_text = transcribed_text
+            self.unfinished_sentence[room_id] = None  # Reset unfinished sentence
+        transcribed_text = transcribed_text.lstrip()
+        pattern = r'[^a-zA-Z0-9.,\-/?! ]'
+        transcribed_text = re.sub(pattern, '', transcribed_text)
         update_context_start_time = time.time()
         self.update_context(transcribed_text, room_id)
         update_context_time = unix_seconds_to_ms(time.time() - update_context_start_time)
         logging.info(f"[ASR] Updated context: {self.context[room_id] if room_id in self.context else ''}")
     
         logging.info(f"[ASR] Finished processing audio chunk, transcribe time: {transcribe_time} ms, update context time: {update_context_time} ms")
-        return (transcribed_text, transcribe_time, update_context_time)
+        return transcribed_text, transcribe_time, update_context_time
 
     def confirm_text(self, transcribed_text: str, room_id) -> str:
         # Split the current and previous transcription into words

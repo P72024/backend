@@ -37,7 +37,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize the ASR model
-_ASR = ASR("tiny.en", device="auto", compute_type="int8", max_context_length=100, num_workers=2)
+_ASR = ASR("tiny.en", device="auto", compute_type="int8", max_context_length=50, num_workers=1)
 
 connected_clients = dict()
 rooms = dict()
