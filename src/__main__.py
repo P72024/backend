@@ -4,6 +4,7 @@ import os
 import pickle
 from io import BytesIO
 import uuid
+import re
 
 import websockets
 import logging
@@ -44,14 +45,14 @@ audio_queue = asyncio.Queue()
 
 async def process_audio_chunks_to_pkl():
     while True:
-        _, _, np_audio = await audio_queue.get()
+        client_id, room_id, np_audio = await audio_queue.get()
 
-        logging.info("Processing audio chunk")
+        regex = r":(\d+(\.\d+)?)$"
+        min_chunk_size = int(re.search(regex, client_id).group(1))
+        speech_threshold = float(re.search(regex, room_id).group(1))
 
         try:
-            await save_chunk(np_audio)
-
-            logging.info("Audio chunk saved successfully")
+            await save_chunk(np_audio, min_chunk_size, speech_threshold)
 
         except Exception as e:
             logging.error(f"Error saving audio chunk: {e}")
@@ -138,7 +139,7 @@ async def get_audio(data):
     
     # Add audio chunk to the queue for processing
     await audio_queue.put((client_id, room_id, np_audio))
-    logging.info(f"Added audio chunk to queue for client {client_id} in room {room_id}")
+    # logging.info(f"Added audio chunk to queue for client {client_id} in room {room_id}")
 
 async def disconnecting(data):
     room_id = data.get("roomId")
@@ -282,9 +283,9 @@ def get_absolute_path(relative_path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), relative_path)
 
 
-async def save_chunk(data):
+async def save_chunk(data, min_chunk_size, speech_threshold):
     # Check if file exists, and initialize it if not
-    file_path = get_absolute_path('../benchmarking/testfiles/zesty_testy.pkl')
+    file_path = get_absolute_path(f'../benchmarking/testfiles/{min_chunk_size}-{speech_threshold}.pkl')
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     
 
