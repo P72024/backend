@@ -9,7 +9,11 @@ import websockets
 import logging
 import numpy as np
 
+import time
+
 from ASR.ASR import ASR
+
+from Util import unix_seconds_to_ms
 
 if not os.path.exists("logs"):
     os.makedirs("logs")
@@ -33,7 +37,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize the ASR model
-_ASR = ASR("tiny.en", device="auto", compute_type="int8", max_context_length=100)
+_ASR = ASR("distil-large-v3", device="auto", compute_type="float32", max_context_length=50, num_workers=2)
 
 connected_clients = dict()
 rooms = dict()
@@ -45,26 +49,42 @@ audio_queue = asyncio.Queue()
 async def process_audio_chunks():
     while True:
         # Process each chunk in the queue one at a time
-        client_id, screen_name, room_id, np_audio = await audio_queue.get()
+        client_id, screen_name, room_id, np_audio, sentAt, receivedAt = await audio_queue.get()
+
+        audio_queue_wait_time = unix_seconds_to_ms(time.time()) - receivedAt
+        processing_start_time = unix_seconds_to_ms(time.time())
 
         logging.warning(f"Transcribing audio chunk for client {client_id} in room {room_id}")
-        transcribed_text = _ASR.process_audio(np_audio)
+        (transcribed_text, transcribe_time, update_context_time) = _ASR.process_audio(np_audio, room_id)
 
         if transcribed_text:
-            logging.info(f"Transcribed for client {client_id} in room {room_id}: {transcribed_text}")
+            logging.info(f"Transcribed for client {client_id} in room {room_id}: {transcribed_text}. Took {unix_seconds_to_ms(time.time()) - processing_start_time}ms")
             
             # Send the transcribed text to all connected clients in that room
             for (client_id, websocket) in list(rooms[room_id]):
                 try:
+                    websocket_send_start_time = unix_seconds_to_ms(time.time())
                     logging.info(f"Sending transcribed text to client {client_id} in room {room_id}")
+
                     await websocket.send(json.dumps({
                         "message": transcribed_text,
                         "screen_name": screen_name,
                         "type": "transcribed text",
+                        "sentAt": sentAt,
+                        "receivedAt": receivedAt,
+                        "processingTime": {
+                            "total": unix_seconds_to_ms(time.time()) - processing_start_time,
+                            "transcription_time": transcribe_time,
+                            "update_context_time": update_context_time,
+                        },
+                        "queueWaitTime": audio_queue_wait_time,
                     }))
+
+                    logging.info(f"Sent transcribed text to client {client_id} in room {room_id}. Took {unix_seconds_to_ms(time.time()) - websocket_send_start_time}ms")
                 except websockets.ConnectionClosed:
                     logging.warning("Client disconnected.")
-                    connected_clients.pop(client_id)
+                    if client_id in connected_clients:
+                        connected_clients.pop(client_id)
                     await leave_room(room_id, client_id, websocket)
                     print(rooms)
 
@@ -96,6 +116,8 @@ async def handler(websocket):
                     await join_room(room_id, client_id, websocket)
                 case 'audio':
                     await get_audio(data)
+                case 'ping':
+                    await websocket.send(json.dumps(data))
                 case _:
                     logging.warning(f"Incorrect type on message: {data}")
 
@@ -105,7 +127,8 @@ async def handler(websocket):
         logging.info(f"Rooms: {rooms}")
         client_id = next((key for key, value in connected_clients.items() if value == websocket), None)
         room_id = next((key for key, value in rooms.items() if client_id in value), None)
-        connected_clients.pop(client_id)
+        if client_id in connected_clients:
+            connected_clients.pop(client_id)
         await leave_room(room_id, client_id, websocket)
         print(rooms)
 
@@ -121,10 +144,12 @@ async def get_audio(data):
     screen_name = data.get('screenName', client_id)
     room_id = data.get('roomId')
     audio_data = data.get('audioData')
+    sentAt = data.get('sentAt')
+    receivedAt = unix_seconds_to_ms(time.time())
     np_audio = np.array(audio_data, dtype=np.float32)
     
     # Add audio chunk to the queue for processing
-    await audio_queue.put((client_id, screen_name, room_id, np_audio))
+    await audio_queue.put((client_id, screen_name, room_id, np_audio, sentAt, receivedAt))
     logging.info(f"Added audio chunk to queue for client {client_id} in room {room_id}")
 
 async def disconnecting(data):
@@ -247,7 +272,8 @@ async def join_room(room_id, client_id, websocket):
 
 async def leave_room(room_id, client_id, websocket):
     if room_id in rooms:
-        rooms[room_id].remove((client_id, websocket))
+        if (client_id, websocket) in rooms[room_id]:
+            rooms[room_id].remove((client_id, websocket))
         logging.info(f'Client {client_id} left room {room_id}')
         await websocket.send(json.dumps({
             "message": room_id,
@@ -292,7 +318,7 @@ async def save_metadata(data):
 
 async def main():
     # Start the websocket server
-    async with websockets.serve(handler, "0.0.0.0", 3000, ping_interval=20, ping_timeout=10):
+    async with websockets.serve(handler, "0.0.0.0", 3000):
         logging.info("Server is ready!")
 
         await process_audio_chunks()
