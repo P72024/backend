@@ -27,12 +27,12 @@ class ASR:
             language='en',
             beam_size=5,
             initial_prompt=context,
-            condition_on_previous_text=False,
-            temperature= 0.2,
-            hallucination_silence_threshold = 0.3,
-            max_new_tokens= 90,
-            no_repeat_ngram_size=1,  # Prevent repetition of 3-gram sequences
-            repetition_penalty=1.5  # Apply a moderate penalty to repeated words
+            # condition_on_previous_text=False,
+            # temperature= 0.2,
+            # hallucination_silence_threshold = 0.3,
+            # max_new_tokens= 90,
+            # no_repeat_ngram_size=1,  # Prevent repetition of 3-gram sequences
+            # repetition_penalty=1.5  # Apply a moderate penalty to repeated words
             
         )
         
