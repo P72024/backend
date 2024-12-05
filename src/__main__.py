@@ -49,7 +49,7 @@ audio_queue = asyncio.Queue()
 async def process_audio_chunks():
     while True:
         # Process each chunk in the queue one at a time
-        client_id, room_id, np_audio, sentAt, receivedAt = await audio_queue.get()
+        client_id, screen_name, room_id, np_audio, sentAt, receivedAt = await audio_queue.get()
 
         audio_queue_wait_time = unix_seconds_to_ms(time.time()) - receivedAt
         processing_start_time = unix_seconds_to_ms(time.time())
@@ -68,6 +68,7 @@ async def process_audio_chunks():
 
                     await websocket.send(json.dumps({
                         "message": transcribed_text,
+                        "screen_name": screen_name,
                         "type": "transcribed text",
                         "sentAt": sentAt,
                         "receivedAt": receivedAt,
@@ -140,6 +141,7 @@ async def create_id(websocket):
 
 async def get_audio(data):
     client_id = data.get('clientId')
+    screen_name = data.get('screenName', client_id)
     room_id = data.get('roomId')
     audio_data = data.get('audioData')
     sentAt = data.get('sentAt')
@@ -147,7 +149,7 @@ async def get_audio(data):
     np_audio = np.array(audio_data, dtype=np.float32)
     
     # Add audio chunk to the queue for processing
-    await audio_queue.put((client_id, room_id, np_audio, sentAt, receivedAt))
+    await audio_queue.put((client_id, screen_name, room_id, np_audio, sentAt, receivedAt))
     logging.info(f"Added audio chunk to queue for client {client_id} in room {room_id}")
 
 async def disconnecting(data):
