@@ -304,7 +304,10 @@ async def main():
     async with websockets.serve(handler, "0.0.0.0", 3000, ping_interval=20, ping_timeout=10):
         logging.info("Server is ready!")
 
-        await process_audio_chunks_to_pkl()
+        # run this to save audio chunks for benchmarking
+        # await process_audio_chunks_to_pkl()
 
+        # run this for standard transcription functionality
+        await process_audio_chunks()
 if __name__ == "__main__":
     asyncio.run(main())
