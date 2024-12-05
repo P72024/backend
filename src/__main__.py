@@ -37,7 +37,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize the ASR model
-_ASR = ASR("distil-large-v3", device="auto", compute_type="float32", max_context_length=50, num_workers=2)
+_ASR = ASR("tiny.en", device="auto", compute_type="int8", max_context_length=50, num_workers=2)
 
 connected_clients = dict()
 rooms = dict()
@@ -168,7 +168,7 @@ async def kickout(data):
     client_to_kick_id = data.get("clientToKickId")
     client_id = data.get("clientId")
     
-    if client_id in room_admins:
+    if room_id in room_admins and room_admins[room_id] == client_id:
         await broadcast({
             "message": client_to_kick_id,
             "type": "kickout",
