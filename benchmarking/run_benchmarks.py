@@ -31,6 +31,8 @@ async def run_benchmarks():
         print(f"Combination {i} of {total_combinations}: {params}")
         #TODO: kør tests på alle parametre fra config og evt flere (lige nu er det kun model_type/size). Test for alle testfilerne. Måske bare smid alle testfiler i samme mappe og så kør testen for alle filer i den mappe.
         #TODO: EVT. kør mere end een test og så tag et gennemsnit af alle resultaterne.
+
+                                                                    # filnavn tilsvarer paramtetrene fra vadfilteret.
         results = await process_audio_benchmark(f"{get_absolute_path('testfiles/8-0.8.pkl')}", f"{get_absolute_path('testfiles/benchmark.txt')}", params["model_type"])
 
         params = [
