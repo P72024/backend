@@ -21,16 +21,6 @@ grid_search:
       - 1
       - 2
       - 3
-    VAD_filter_threshold:
-      - 0.3
-      - 0.5
-      - 0.7
-    min_chunk_size:
-      - 3
-      - 6
-      - 9
-      - 12
-      - 15
 
 experiment_setup:
   output_dir: "results/"

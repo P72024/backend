@@ -305,9 +305,9 @@ async def main():
         logging.info("Server is ready!")
 
         # run this to save audio chunks for benchmarking
-        # await process_audio_chunks_to_pkl()
+        await process_audio_chunks_to_pkl()
 
         # run this for standard transcription functionality
-        await process_audio_chunks()
+        # await process_audio_chunks()
 if __name__ == "__main__":
     asyncio.run(main())
