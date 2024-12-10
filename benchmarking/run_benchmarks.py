@@ -47,28 +47,32 @@ num_iterations = 3
 
 async def run_benchmarks(use_gpu : bool, combinations, files):
     total_combinations = len(combinations)
-    total_files = len(files)
+    # total_files = len(files)
+    total_files = 8
     with Progress(
     TextColumn("[progress.description]{task.description}"),
     BarColumn(),
     TaskProgressColumn(),
     TimeRemainingColumn(),
 ) as progress:
-        combinationsProgress = progress.add_task("[green]Benchmarking Combinations...", total=total_combinations)
-        fileProgress = progress.add_task("[red]Benchmarking files...", total=total_files)
         iterationProgress = progress.add_task("[yellow]Running Iterations...", total=num_iterations)
+        combinationsProgress = progress.add_task("[blue]Benchmarking Combinations...", total=total_combinations)
+        fileProgress = progress.add_task("[red]Benchmarking files...", total=total_files)
+        totalProgression = progress.add_task('[green]Total Progress...', total=total_combinations*total_files*num_iterations)
         
         for file_idx, (filename, file) in enumerate(files, 1):
             progress.reset(combinationsProgress)
             for i, params in enumerate(combinations, 1):
                 progress.reset(iterationProgress)
-                progress.console.print(f"Combination {i} of {total_combinations} with file {file_idx} of {len(files)}: {params}")
+                progress.console.print(f"Combination {i} of {total_combinations} with file {file_idx} of {total_files}: {params}")
                 #TODO: EVT. kør mere end een test og så tag et gennemsnit af alle resultaterne.
 
                 results_array = []
                 for i in range(num_iterations):
                     transcription_results = await process_audio_benchmark(f"{get_absolute_path(file)}", f"{get_absolute_path('testfiles/benchmark.txt')}", params, use_gpu)
                     results_array.append(transcription_results)
+                    progress.update(iterationProgress, advance=1)
+                    progress.update(totalProgression, advance=1)
 
                 # calculate the average values from the iterations
                 # print(results_array)
