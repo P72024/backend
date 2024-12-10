@@ -81,7 +81,7 @@ class ASR_tweaked:
             if total_prob / len(transcribed_words) > self.conf_limit and transcribed_words[-1][3] > self.conf_limit:
                 self.update_context(transcribed_text)
                 # logging.info("Text Transcribed!")
-                print(f"[TRANSCRIPTION] {transcribed_text}")
+                # print(f"[TRANSCRIPTION] {transcribed_text}")
                 return transcribed_text
             else:
                 self.prev_chunks = audio_chunk

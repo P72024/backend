@@ -66,7 +66,7 @@ class ASR:
 
         transcribed_text = self.transcribe(audio_chunk, self.context)
         if ("..." in transcribed_text or transcribed_text.endswith('-') or transcribed_text.endswith('- ')):
-            print(f"Something is unfinished")
+            # print(f"Something is unfinished")
             self.prev_chunks = audio_chunk
             return ""
         
@@ -75,7 +75,7 @@ class ASR:
         pattern = r'[^a-zA-Z0-9.,\-/?! ]'
         transcribed_text = re.sub(pattern, '', transcribed_text)
 
-        print(f"[TRANSCRIPTION] {transcribed_text}")
+        # print(f"[TRANSCRIPTION] {transcribed_text}")
 
         if self.use_context:
             self.update_context(transcribed_text)
