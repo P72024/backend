@@ -1,8 +1,2 @@
-Param,Value
-Model,large-v3
-Metric,Value
-Max. chunk time,21003.7793601
-Min. chunk time,12.1853087
-Avg. chunk time,646.8553634
-Word Error Rate (WER),98.0%
-Total Transcription time,21993.082354307175
+Date,Filename,compute_type,model_type,beam_size,use_context,confidence_based,num_workers,confidence_limit,Max. chunk time,Min. chunk time,Avg. chunk time,Word Error Rate (WER),Word Information Loss (WIL),Total Transcription Time,Total GPU Usage,Peak GPU Usage,Avg. GPU Usage,Total RAM Usage,Peak RAM Usage,Avg. RAM Usage
+2024-12-10 11:23:13.501,16-0.3.pkl,int8_float32,tiny.en,3,True,True,1,0.6,0.8496020,0.5224941,0.7022290,24.5%,25.4%,12.640122175216675,0,0,0.0,681.2,38.7,37.84444444444445
