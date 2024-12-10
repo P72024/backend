@@ -43,14 +43,12 @@ config_file_path = get_absolute_path("config.yaml")
 
 async def run_benchmarks(use_gpu : bool, combinations, files):
     total_combinations = len(combinations)
-    for i, params in enumerate(combinations, 1):
-
-        for file_idx, (filename, file) in enumerate(files, 1):
+    for file_idx, (filename, file) in enumerate(files, 1):
+        for i, params in enumerate(combinations, 1):
             print(f"Combination {i} of {total_combinations} with file {file_idx} of {len(files)}: {params}")
             #TODO: EVT. kør mere end een test og så tag et gennemsnit af alle resultaterne.
             transcription_results = await process_audio_benchmark(f"{get_absolute_path(file)}", f"{get_absolute_path('testfiles/benchmark.txt')}", params, use_gpu)
 
-            #TODO: skriv tidspunkt(dato), filnavn og parametre plus evalueringskriterier ud på een linje i csv. Og bare tilføj til csv'en i stedet for at overskrive den.
             csv_row = [
                 datetime.today().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
                 filename]

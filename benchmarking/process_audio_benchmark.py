@@ -1,4 +1,5 @@
 import csv
+import subprocess
 import os
 import pickle
 import sys
@@ -18,6 +19,7 @@ from ASR.tweaked import ASR_tweaked
 
 def measure_usage():
     # Get RAM usage in GB
+    get_clockspeed_command = ["nvidia-smi", "--query-gpu=clocks.gr", "--format=csv,noheader,nounits"]
     ram_used_gb = psutil.virtual_memory().used / (1024 ** 3)  # Convert bytes to GB
 
     # Get GPU usage: VRAM used (in MB) and GPU MHz
@@ -29,7 +31,13 @@ def measure_usage():
         # Assume single GPU for simplicity (you can loop through `gpus` if needed)
         gpu = gpus[0]
         gpu_vram_used_mb = gpu.memoryUsed  # VRAM used in MB
-        gpu_mhz = gpu.clock  # GPU clock in MHz
+        process = subprocess.Popen(get_clockspeed_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        output, error = process.communicate()
+        # print(f"Clock speed output: {output}")
+        if process.returncode == 0:
+            gpu_mhz = int(output.strip())
+        else: 
+            gpu_mhz = 0  # GPU clock in MHz
 
     return ram_used_gb, gpu_vram_used_mb, gpu_mhz
 
@@ -75,7 +83,7 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
     actual_text = ""
     with open(chunks_pkl, 'rb') as f:
         chunks = pickle.load(f)
-    print(f"Number of chunks: {len(chunks)}")
+    # print(f"Number of chunks: {len(chunks)}")
     # sf.write("benchmark.wav", chunks, samplerate=sr)
     #Start timer
     times = []
@@ -154,22 +162,22 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
     # print(transforms(transcribed_text))
     finaltext = " ".join(transforms(transcribed_text)[0])
     transformed_actual_text = " ".join(transforms(actual_text)[0])
-    print(f"The actual text is:\n{transformed_actual_text}")
-    print(f'\n\nThe Transcribed text was:\n{finaltext}')
+    # print(f"The actual text is:\n{transformed_actual_text}")
+    # print(f'\n\nThe Transcribed text was:\n{finaltext}')
     # wer = jiwer.wer(transformed_actual_text, transcribed_text, truth_transform=transforms, hypothesis_transform=transforms, )
 
     measures = jiwer.compute_measures(transformed_actual_text, finaltext, truth_transform=transforms, hypothesis_transform=transforms)
     # print(f"Measurements from Jiwer: \n{measures}")
     # print(f"    WER: {wer * 100:.1f}% between {txt_filename} and test")
     # print(f"    Total time using process_audio on test: {total_time} seconds")
-    metric_table = PrettyTable(['Metric', 'value'])
-    metric_table.add_row(['Max. chunk time', max_chunk_time])
-    metric_table.add_row(['Min. chunk time', min_chunk_time])
-    metric_table.add_row(['Avg. chunk time', average_chunk_time])
-    metric_table.add_row(['Word Error Rate (WER)', f"{measures['wer'] * 100:.1f}% "])
-    metric_table.add_row(['Word Information Loss (WIL)', f"{measures['wil'] * 100:.1f}%"])
-    metric_table.add_row(['Total Transcription time', total_time])
-    print(metric_table)
+    # metric_table = PrettyTable(['Metric', 'value'])
+    # metric_table.add_row(['Max. chunk time', max_chunk_time])
+    # metric_table.add_row(['Min. chunk time', min_chunk_time])
+    # metric_table.add_row(['Avg. chunk time', average_chunk_time])
+    # metric_table.add_row(['Word Error Rate (WER)', f"{measures['wer'] * 100:.1f}% "])
+    # metric_table.add_row(['Word Information Loss (WIL)', f"{measures['wil'] * 100:.1f}%"])
+    # metric_table.add_row(['Total Transcription time', total_time])
+    # print(metric_table)
     # print(f"    Average time pr. chunk: {average_time_per_chunk} seconds, chunk size: {chunk_size}")
     results = {
         "Max. chunk time": max_chunk_time,
@@ -183,7 +191,7 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
         "Peak GPU VRAM Usage": peak_GPU_VRAM_usage,
         "Peak GPU Clock Speed": peak_GPU_clock_usage,
         "Avg. GPU VRAM Usage": avg_GPU_VRAM_usage,
-        "Avg. GPU Clock Speed": avg_GPU_VRAM_usage,
+        "Avg. GPU Clock Speed": avg_GPU_clock_usage,
         "Total RAM Usage": total_RAM_usage,
         "Peak RAM Usage": peak_RAM_usage,
         "Avg. RAM Usage": avg_RAM_usage
