@@ -16,10 +16,10 @@ class ASR:
 
 
     def __init__ (self,
-                  model_size: str,
-                  beam_size: int,
-                  use_context: bool,
-                  num_workers: int,
+                  model_size: str = 'tiny.en',
+                  beam_size: int = 5,
+                  use_context: bool = True,
+                  num_workers: int = 1,
                   device="auto",
                   compute_type = "int8_float32",
                   max_context_length=200):
@@ -60,6 +60,7 @@ class ASR:
     
     def process_audio(self, audio_chunk: np.float32) -> str:
         logging.info("[ASR] Processing audio chunk")
+        return self.transcribe(audio_chunk, self.context)
         if self.prev_chunks is not None:
             audio_chunk = np.concatenate((self.prev_chunks, audio_chunk), axis=0)
             self.prev_chunks = None

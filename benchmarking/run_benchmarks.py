@@ -11,10 +11,10 @@ from rich.progress import (BarColumn, Progress, TaskProgressColumn, TextColumn,
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 import yaml
-from ASR.ASR import ASR
 from memory_profiler import profile
-
 from process_audio_benchmark import process_audio_benchmark
+
+from ASR.ASR import ASR
 
 
 def get_absolute_path(relative_path):
@@ -47,8 +47,8 @@ num_iterations = 3
 
 async def run_benchmarks(use_gpu : bool, combinations, files):
     total_combinations = len(combinations)
-    # total_files = len(files)
-    total_files = 8
+    total_files = len(files)
+    total_progress_length = total_files * total_combinations * num_iterations
     with Progress(
     TextColumn("[progress.description]{task.description}"),
     BarColumn(),
@@ -58,7 +58,7 @@ async def run_benchmarks(use_gpu : bool, combinations, files):
         iterationProgress = progress.add_task("[yellow]Running Iterations...", total=num_iterations)
         combinationsProgress = progress.add_task("[blue]Benchmarking Combinations...", total=total_combinations)
         fileProgress = progress.add_task("[red]Benchmarking files...", total=total_files)
-        totalProgression = progress.add_task('[green]Total Progress...', total=total_combinations*total_files*num_iterations)
+        totalProgression = progress.add_task('[green]Total Progress...', total=total_progress_length)
         
         for file_idx, (filename, file) in enumerate(files, 1):
             progress.reset(combinationsProgress)

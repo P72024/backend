@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize the ASR model
-_ASR = ASR("tiny.en", device="auto", compute_type="int8", max_context_length=100)
+_ASR = ASR()
 
 connected_clients = dict()
 rooms = dict()
@@ -81,7 +81,7 @@ async def process_audio_chunks():
                     logging.warning("Client disconnected.")
                     connected_clients.pop(client_id)
                     await leave_room(room_id, client_id, websocket)
-                    print(rooms)
+                    # print(rooms)
 
 async def handler(websocket):
     logging.info("New client connected!")
@@ -122,7 +122,7 @@ async def handler(websocket):
         room_id = next((key for key, value in rooms.items() if client_id in value), None)
         connected_clients.pop(client_id)
         await leave_room(room_id, client_id, websocket)
-        print(rooms)
+        # print(rooms)
 
 async def create_id(websocket):
     id = None
@@ -136,8 +136,8 @@ async def get_audio(data):
     room_id = data.get('roomId')
     audio_data = data.get('audioData')
     isLastOfSpeech = data.get('isLastOfSpeech')
-    print(f"The type of isLastOfSpeech is {type(isLastOfSpeech)}")
-    print(f"Received chunk. isLastOfSpeech = {isLastOfSpeech}")
+    # print(f"The type of isLastOfSpeech is {type(isLastOfSpeech)}")
+    # print(f"Received chunk. isLastOfSpeech = {isLastOfSpeech}")
     np_audio = np.array(audio_data, dtype=np.float32)
     
     # Add audio chunk to the queue for processing
@@ -214,7 +214,7 @@ async def broadcast(message, room_id=None):
                 logging.warning("Client disconnected.")
                 connected_clients.pop(client_id)
                 await leave_room(room_id, client_id, websocket)
-                print(rooms)
+                # print(rooms)
     else:
         for client_id, websocket in connected_clients.items():
             try:
@@ -225,7 +225,7 @@ async def broadcast(message, room_id=None):
                 room_id = next((key for key, value in rooms.items() if client_id in value), None)
                 if room_id is not None:
                     await leave_room(room_id, client_id, websocket)
-                    print(rooms)
+                    # print(rooms)
 
 
 
