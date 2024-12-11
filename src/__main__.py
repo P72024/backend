@@ -1,18 +1,17 @@
 import asyncio
 import json
+import logging
 import os
 import pickle
-from io import BytesIO
-import uuid
-
-import websockets
-import logging
-import numpy as np
-
 import time
+import uuid
+from io import BytesIO
+
+import numpy as np
+import websockets
 
 from ASR.ASR import ASR
-
+from ASR.tweaked import ASR_tweaked
 from Util import unix_seconds_to_ms
 
 if not os.path.exists("logs"):
@@ -37,7 +36,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize the ASR model
-_ASR = ASR("tiny.en", device="auto", compute_type="int8", max_context_length=50, num_workers=2)
+_ASR = ASR_tweaked()
 
 connected_clients = dict()
 rooms = dict()
