@@ -48,14 +48,14 @@ audio_queue = asyncio.Queue()
 
 async def process_audio_chunks_to_pkl():
     while True:
-        client_id, room_id, np_audio, isLastOfSpeech = await audio_queue.get()
+        client_id, room_id, np_audio = await audio_queue.get()
 
         regex = r":(\d+(\.\d+)?)$"
         min_chunk_size = int(re.search(regex, client_id).group(1))
         speech_threshold = float(re.search(regex, room_id).group(1))
 
         try:
-            await save_chunk(np_audio, min_chunk_size, speech_threshold, isLastOfSpeech)
+            await save_chunk(np_audio, min_chunk_size, speech_threshold)
 
         except Exception as e:
             logging.error(f"Error saving audio chunk: {e}")
