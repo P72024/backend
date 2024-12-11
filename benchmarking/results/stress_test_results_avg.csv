@@ -1,0 +1,1 @@
+Date,Filename,num_concurrent_clients,num_workers,Word Error Rate (WER),Word Information Loss (WIL),Total Transcription Time,Total GPU VRAM Usage,Total GPU Clock Speed,Peak GPU VRAM Usage,Peak GPU Clock Speed,Avg. GPU VRAM Usage,Avg. GPU Clock Speed,Total RAM Usage,Peak RAM Usage,Avg. RAM Usage

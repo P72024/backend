@@ -24,6 +24,27 @@ grid_search:
         - 0.6
         - 0.8
 
+stress_test:
+  parameters:
+    global:
+      num_concurrent_clients:
+        - 2
+        - 3
+      num_workers:
+        - 1
+        - 4
+      model_type: 
+        - "distil-medium.en"
+      beam_size: 
+        - 7
+      use_context: 
+        - False
+      confidence_based:
+        - False
+    confidence:
+      confidence_limit: 
+        - 0.8
+    
 
 experiment_setup:
   output_dir: "results/"
