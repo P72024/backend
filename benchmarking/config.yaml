@@ -1,0 +1,52 @@
+grid_search:
+  parameters:
+    global:
+      model_type: 
+        - "distil-small.en"
+        - "distil-medium.en"
+        - "distil-large-v3"
+      beam_size: 
+        - 3
+        - 5
+        - 7
+      use_context: 
+        - True
+        - False
+      confidence_based:
+        - True
+        - False
+      num_workers:
+        - 1
+        - 4
+    confidence:
+      confidence_limit: 
+        - 0.4
+        - 0.6
+        - 0.8
+
+stress_test:
+  parameters:
+    global:
+      num_concurrent_clients:
+        - 2
+        - 3
+      num_workers:
+        - 1
+        - 4
+      model_type: 
+        - "distil-medium.en"
+      beam_size: 
+        - 7
+      use_context: 
+        - False
+      confidence_based:
+        - False
+    confidence:
+      confidence_limit: 
+        - 0.8
+    
+
+experiment_setup:
+  output_dir: "results/"
+  num_trials: 1
+  random_seed: 42
