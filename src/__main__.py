@@ -4,6 +4,7 @@ import logging
 import os
 import pickle
 import re
+import time
 import uuid
 from io import BytesIO
 
@@ -11,6 +12,8 @@ import numpy as np
 import websockets
 
 from ASR.ASR import ASR
+from ASR.tweaked import ASR_tweaked
+from Util import unix_seconds_to_ms
 
 if not os.path.exists("logs"):
     os.makedirs("logs")
@@ -34,7 +37,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize the ASR model
-_ASR = ASR()
+_ASR = ASR_tweaked()
 
 connected_clients = dict()
 rooms = dict()
@@ -61,27 +64,43 @@ async def process_audio_chunks_to_pkl():
 async def process_audio_chunks():
     while True:
         # Process each chunk in the queue one at a time
-        client_id, room_id, np_audio, isLastOfSpeech = await audio_queue.get()
+        client_id, screen_name, room_id, np_audio, sentAt, receivedAt = await audio_queue.get()
 
-        logging.info(f"Transcribing audio chunk for client {client_id} in room {room_id}")
-        transcribed_text = _ASR.process_audio(np_audio, isLastOfSpeech)
+        audio_queue_wait_time = unix_seconds_to_ms(time.time()) - receivedAt
+        processing_start_time = unix_seconds_to_ms(time.time())
+
+        logging.warning(f"Transcribing audio chunk for client {client_id} in room {room_id}")
+        (transcribed_text, transcribe_time, update_context_time) = _ASR.process_audio(np_audio, room_id)
 
         if transcribed_text:
-            logging.info(f"Transcribed for client {client_id} in room {room_id}: {transcribed_text}")
+            logging.info(f"Transcribed for client {client_id} in room {room_id}: {transcribed_text}. Took {unix_seconds_to_ms(time.time()) - processing_start_time}ms")
             
             # Send the transcribed text to all connected clients in that room
             for (client_id, websocket) in list(rooms[room_id]):
                 try:
+                    websocket_send_start_time = unix_seconds_to_ms(time.time())
                     logging.info(f"Sending transcribed text to client {client_id} in room {room_id}")
+
                     await websocket.send(json.dumps({
                         "message": transcribed_text,
+                        "screen_name": screen_name,
                         "type": "transcribed text",
+                        "sentAt": sentAt,
+                        "receivedAt": receivedAt,
+                        "processingTime": {
+                            "total": unix_seconds_to_ms(time.time()) - processing_start_time,
+                            "transcription_time": transcribe_time,
+                            "update_context_time": update_context_time,
+                        },
+                        "queueWaitTime": audio_queue_wait_time,
                     }))
+
+                    logging.info(f"Sent transcribed text to client {client_id} in room {room_id}. Took {unix_seconds_to_ms(time.time()) - websocket_send_start_time}ms")
                 except websockets.ConnectionClosed:
                     logging.warning("Client disconnected.")
-                    connected_clients.pop(client_id)
-                    await leave_room(room_id, client_id, websocket)
-                    # print(rooms)
+                    if client_id in connected_clients:
+                        connected_clients.pop(client_id)
+                    await disconnecting(room_id, client_id, websocket)
 
 async def handler(websocket):
     logging.info("New client connected!")
@@ -95,7 +114,9 @@ async def handler(websocket):
                 case 'create id':
                     await create_id(websocket)
                 case 'disconnecting':
-                    await disconnecting(data)
+                    room_id = data.get("roomId")
+                    client_id = data.get("clientId")
+                    await disconnecting(room_id, client_id, websocket)
                 case 'leave room':
                     room_id = data.get("roomId")
                     client_id = data.get("clientId")
@@ -111,18 +132,17 @@ async def handler(websocket):
                     await join_room(room_id, client_id, websocket)
                 case 'audio':
                     await get_audio(data)
+                case 'ping':
+                    await websocket.send(json.dumps(data))
                 case _:
                     logging.warning(f"Incorrect type on message: {data}")
-
     except websockets.ConnectionClosed:
         logging.info("Client connection closed")
-        logging.info(f"Connected Clients: {connected_clients}")
-        logging.info(f"Rooms: {rooms}")
         client_id = next((key for key, value in connected_clients.items() if value == websocket), None)
         room_id = next((key for key, value in rooms.items() if client_id in value), None)
-        connected_clients.pop(client_id)
-        await leave_room(room_id, client_id, websocket)
-        # print(rooms)
+        if client_id in connected_clients:
+            connected_clients.pop(client_id)
+        await disconnecting(room_id, client_id, websocket)
 
 async def create_id(websocket):
     id = None
@@ -133,26 +153,36 @@ async def create_id(websocket):
 
 async def get_audio(data):
     client_id = data.get('clientId')
+    screen_name = data.get('screenName', client_id)
     room_id = data.get('roomId')
     audio_data = data.get('audioData')
-    isLastOfSpeech = data.get('isLastOfSpeech')
-    # print(f"The type of isLastOfSpeech is {type(isLastOfSpeech)}")
-    # print(f"Received chunk. isLastOfSpeech = {isLastOfSpeech}")
+    sentAt = data.get('sentAt')
+    receivedAt = unix_seconds_to_ms(time.time())
     np_audio = np.array(audio_data, dtype=np.float32)
     
     # Add audio chunk to the queue for processing
-    await audio_queue.put((client_id, room_id, np_audio, isLastOfSpeech))
-    # logging.info(f"Added audio chunk to queue for client {client_id} in room {room_id}")
+    await audio_queue.put((client_id, screen_name, room_id, np_audio, sentAt, receivedAt))
+    logging.info(f"Added audio chunk to queue for client {client_id} in room {room_id}")
 
-async def disconnecting(data):
-    room_id = data.get("roomId")
-    client_id = data.get("clientId")
+async def disconnecting(room_id, client_id, websocket):
     if room_id not in rooms:
         return
-    await broadcast({
-        "message": client_id,
-        "type": "leave"
-    })
+    if (client_id, websocket) in rooms[room_id]:
+        rooms[room_id].remove((client_id, websocket))
+    if client_id in connected_clients:
+        connected_clients.pop(client_id)
+    logging.info(f'Client {client_id} left room {room_id}')
+
+    if (len(rooms[room_id]) == 0):
+        del rooms[room_id]
+        logging.log(logging.WARNING, f'room {room_id} has been deleted')
+    else:
+        await broadcast({
+            "message": client_id,
+            "type": "leave"
+        }, client_id, room_id) 
+    logging.info(f"Connected Clients: {connected_clients}")
+    logging.info(f"Rooms: {rooms}")
 
 
 async def kickout(data):
@@ -160,11 +190,11 @@ async def kickout(data):
     client_to_kick_id = data.get("clientToKickId")
     client_id = data.get("clientId")
     
-    if client_id in room_admins:
+    if room_id in room_admins and room_admins[room_id] == client_id:
         await broadcast({
             "message": client_to_kick_id,
             "type": "kickout",
-        }, room_id)
+        }, client_id, room_id)
         client_to_kick = next(((key, value) for key, value in connected_clients.items() if client_to_kick_id == key))
         rooms[room_id].remove(client_to_kick)
     else:
@@ -194,7 +224,7 @@ async def handle_message(data):
                 "client_id": client_id
             },
             "type": "message",
-        }, room_id)
+        }, client_id, room_id)
     else:
         logging.info(f"From {client_id} to everyone {message_type}")
         await broadcast({
@@ -203,31 +233,31 @@ async def handle_message(data):
                 "client_id": client_id
             },
             "type": "message",
-        })
+        }, client_id)
 
-async def broadcast(message, room_id=None):
+async def broadcast(message, from_client_id, room_id=None):
     if room_id is not None:
         for client_id, websocket in rooms[room_id]:
             try:
-                await websocket.send(json.dumps(message))
+                if from_client_id != client_id:
+                    await websocket.send(json.dumps(message))
             except websockets.ConnectionClosed:
                 logging.warning("Client disconnected.")
-                connected_clients.pop(client_id)
-                await leave_room(room_id, client_id, websocket)
-                # print(rooms)
+                if client_id in connected_clients:
+                    connected_clients.pop(client_id)
+                await disconnecting(room_id, client_id, websocket)
     else:
         for client_id, websocket in connected_clients.items():
             try:
-                await websocket.send(json.dumps(message))
+                if from_client_id != client_id:
+                    await websocket.send(json.dumps(message))
             except websockets.ConnectionClosed:
                 logging.warning("Client disconnected.")
-                connected_clients.pop(client_id)
+                if client_id in connected_clients:
+                    connected_clients.pop(client_id)
                 room_id = next((key for key, value in rooms.items() if client_id in value), None)
                 if room_id is not None:
-                    await leave_room(room_id, client_id, websocket)
-                    # print(rooms)
-
-
+                    await disconnecting(room_id, client_id, websocket)
 
 async def join_room(room_id, client_id, websocket):
     if room_id not in rooms:
@@ -248,7 +278,7 @@ async def join_room(room_id, client_id, websocket):
         await broadcast({
             "message": room_id,
             "type": "join",
-        }, room_id)
+        }, client_id, room_id)
         rooms[room_id].append((client_id, websocket))
         await websocket.send(json.dumps({
             "message": {
@@ -260,24 +290,26 @@ async def join_room(room_id, client_id, websocket):
         await broadcast({
             "message": client_id,
             "type": "ready",
-        }, room_id)
+        }, client_id, room_id)
 
 async def leave_room(room_id, client_id, websocket):
     if room_id in rooms:
-        rooms[room_id].remove((client_id, websocket))
+        if (client_id, websocket) in rooms[room_id]:
+            rooms[room_id].remove((client_id, websocket))
         logging.info(f'Client {client_id} left room {room_id}')
         await websocket.send(json.dumps({
             "message": room_id,
             "type": "left room",
         }))
-        await broadcast({
-            "message": client_id,
-            "type": "leave"
-        }, room_id)
 
         if (rooms[room_id] == []):
             del rooms[room_id]
             logging.log(logging.WARNING, f'room {room_id} has been deleted')
+        else:
+            await broadcast({
+                "message": client_id,
+                "type": "leave"
+            }, client_id, room_id)
         
         logging.info(f"Rooms: {rooms}")
 
@@ -305,7 +337,8 @@ async def save_chunk(data, min_chunk_size, speech_threshold, isLastOfSpeech):
 
 
 async def main():
-    async with websockets.serve(handler, "0.0.0.0", 3000, ping_interval=20, ping_timeout=10):
+    # Start the websocket server
+    async with websockets.serve(handler, "0.0.0.0", 3000):
         logging.info("Server is ready!")
 
         # run this to save audio chunks for benchmarking
