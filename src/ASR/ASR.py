@@ -2,12 +2,15 @@
 import logging
 from math import ceil
 import re
+import os
+import sys
 import time
 import scipy.io.wavfile as wavfile
 import numpy as np
 from faster_whisper import WhisperModel
 
-from ..Util import unix_seconds_to_ms
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+from Util import unix_seconds_to_ms
 
 class ASR:
     max_context_length = 200
