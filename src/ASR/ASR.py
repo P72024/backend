@@ -12,11 +12,10 @@ from Util import unix_seconds_to_ms
 
 
 class ASR:
-    beam_size = 5
     def __init__ (self,
-                  model_size: str,
-                  beam_size: int,
-                  num_workers: int,
+                  model_size: str = 'tiny.en',
+                  beam_size: int = 5,
+                  num_workers: int = 4,
                   device="auto",
                   compute_type = "int8_float32",
                   max_context_length=200,
