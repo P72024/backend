@@ -1,12 +1,10 @@
 grid_search:
   parameters:
     global:
-      compute_type:
-        - "int8_float32"
-        - "float32"
       model_type: 
-        - "tiny.en"
-        - "large-v3"
+        - "distil-small.en"
+        - "distil-medium.en"
+        - "distil-large-v3"
       beam_size: 
         - 3
         - 5
@@ -19,12 +17,11 @@ grid_search:
         - False
       num_workers:
         - 1
-        - 2
-        - 3
+        - 4
     confidence:
       confidence_limit: 
+        - 0.4
         - 0.6
-        - 0.7
         - 0.8
 
 

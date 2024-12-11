@@ -50,7 +50,6 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
         "confidence_limit": float,
         "confidence_based": bool,
         "num_workers": int,
-        "compute_type": str,
     }
 
     # Validate keys and their types
@@ -70,14 +69,14 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
                           confidence_limit=params["confidence_limit"],
                           num_workers=params["num_workers"],
                           device="cuda" if use_gpu else "auto",
-                          compute_type=params["compute_type"])
+                          compute_type="auto")
     else:
         asr = ASR(model_size=params["model_type"],
                   beam_size=params["beam_size"],
                   use_context=params["use_context"],
                   num_workers=params["num_workers"],
                   device="cuda" if use_gpu else "auto",
-                  compute_type=params["compute_type"])
+                  compute_type="auto")
 
     transcribed_text = ""
     actual_text = ""

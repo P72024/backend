@@ -20,11 +20,12 @@ from ASR.ASR import ASR
 def get_absolute_path(relative_path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), relative_path)
 
-folder_path = 'testfiles/eval_files/'
+folder_avg_path = 'testfiles/eval_files/'
 results_file_path = get_absolute_path("results/results.csv")
+results_avg_file_path = get_absolute_path("results/results_avg.csv")
 
 
-# Add the src folder to the Python path
+# Add the src folder_avg to the Python path
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Run Benchmarks with optional GPU usage")
     
@@ -49,6 +50,7 @@ async def run_benchmarks(use_gpu : bool, combinations, files):
     total_combinations = len(combinations)
     total_files = len(files)
     total_progress_length = total_files * total_combinations * num_iterations
+    print(f"Running Benchmarking with the following settings:\nNumber of combination: {total_combinations}\nNumber of Iterations pr. Combination: {num_iterations}\nNumber of files: {total_files}\nGPU Enabled: {use_gpu}")
     with Progress(
     TextColumn("[progress.description]{task.description}"),
     BarColumn(),
@@ -71,6 +73,23 @@ async def run_benchmarks(use_gpu : bool, combinations, files):
                 for i in range(num_iterations):
                     transcription_results = await process_audio_benchmark(f"{get_absolute_path(file)}", f"{get_absolute_path('testfiles/benchmark.txt')}", params, use_gpu)
                     results_array.append(transcription_results)
+
+                    csv_row = [
+                        datetime.today().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                        filename]
+
+                    for (key, val) in params.items():
+                        if key == 'confidence_limit' and params["confidence_based"] == False:
+                            csv_row.append("N/A")
+                        else:
+                            csv_row.append(val)
+
+                    for (_, val) in transcription_results.items():
+                        csv_row.append(val)
+
+                    with open(results_file_path, "a", newline='') as f:
+                        csv_writer = csv.writer(f)
+                        csv_writer.writerow(csv_row)
                     progress.update(iterationProgress, advance=1)
                     progress.update(totalProgression, advance=1)
 
@@ -127,7 +146,7 @@ async def run_benchmarks(use_gpu : bool, combinations, files):
                     csv_row.append(val)
 
 
-                with open(results_file_path, "a", newline='') as f:
+                with open(results_avg_file_path, "a", newline='') as f:
                     csv_writer = csv.writer(f)
                     csv_writer.writerow(csv_row)
                 progress.update(combinationsProgress, advance=1)
@@ -166,7 +185,6 @@ async def main():
     titles = [
             "Date",
             "Filename",
-                "compute_type",
             "model_type",
             "beam_size",
             "use_context",
@@ -189,18 +207,28 @@ async def main():
             "Peak RAM Usage",
             "Avg. RAM Usage",
             ]
-    folder = os.path.dirname(results_file_path)
-    if folder:  # Only create folder if there's a directory specified
-        os.makedirs(folder, exist_ok=True)
+
+    folder_iter = os.path.dirname(results_file_path)
+    if folder_iter:  # Only create folder if there's a directory specified
+        os.makedirs(folder_iter, exist_ok=True)
+
+    folder_avg = os.path.dirname(results_avg_file_path)
+    if folder_avg:  # Only create folder if there's a directory specified
+        os.makedirs(folder_avg, exist_ok=True)
+
+    with open(results_avg_file_path, "w") as f:
+        csv.writer(f).writerow(titles)
+
     with open(results_file_path, "w") as f:
         csv.writer(f).writerow(titles)
+
     use_gpu = args.gpu  # True if --gpu is passed, otherwise False
     combinations = await generate_combinations(config_file_path)
     print(f"Using GPU: {use_gpu}")
     files = []
-    for file in os.listdir(folder_path):
+    for file in os.listdir(folder_avg_path):
         if file.endswith('.pkl'):
-            files.append((file, folder_path + file))
+            files.append((file, folder_avg_path + file))
     # Example of conditional usage based on use_gpu
     if use_gpu:
         print("Running benchmarks on GPU...")
