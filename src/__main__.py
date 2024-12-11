@@ -121,7 +121,7 @@ async def handler(websocket):
                 case 'benchmarking':
                     data["receiveTime"] = unix_seconds_to_ms(time.time())
                     del data["audioData"]
-                    await websocket.send(json.dumps({data}))
+                    await websocket.send(json.dumps(data))
                 case _:
                     logging.warning(f"Incorrect type on message: {data}")
 
