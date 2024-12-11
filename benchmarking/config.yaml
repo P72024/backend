@@ -1,26 +1,32 @@
 grid_search:
   parameters:
-    model_type: 
-      - "tiny.en"
-      - "large-v3"
-    beam_size: 
-      - 3
-      - 5
-      - 7
-    context: 
-      - "true"
-      - "false"
-    confidence_score: 
-      - 0.6
-      - 0.7
-      - 0.8
-    tweaked_model:
-      - "true"
-      - "false"
-    workers:
-      - 1
-      - 2
-      - 3
+    global:
+      compute_type:
+        - "int8_float32"
+        - "float32"
+      model_type: 
+        - "tiny.en"
+        - "large-v3"
+      beam_size: 
+        - 3
+        - 5
+        - 7
+      use_context: 
+        - True
+        - False
+      confidence_based:
+        - True
+        - False
+      num_workers:
+        - 1
+        - 2
+        - 3
+    confidence:
+      confidence_limit: 
+        - 0.6
+        - 0.7
+        - 0.8
+
 
 experiment_setup:
   output_dir: "results/"

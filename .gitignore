@@ -5,6 +5,7 @@ share
 # Byte-compiled / optimized / DLL files
 src/__pycache__/
 src/ASR/__pycache__/
+benchmarking/__pycache__/
 *.py[cod]
 *$py.class
 **/__pycache__/

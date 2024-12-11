@@ -1,14 +1,14 @@
 import asyncio
 import json
+import logging
 import os
 import pickle
-from io import BytesIO
-import uuid
 import re
+import uuid
+from io import BytesIO
 
-import websockets
-import logging
 import numpy as np
+import websockets
 
 from ASR.ASR import ASR
 
@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize the ASR model
-_ASR = ASR("tiny.en", device="auto", compute_type="int8", max_context_length=100)
+_ASR = ASR()
 
 connected_clients = dict()
 rooms = dict()
@@ -45,14 +45,14 @@ audio_queue = asyncio.Queue()
 
 async def process_audio_chunks_to_pkl():
     while True:
-        client_id, room_id, np_audio = await audio_queue.get()
+        client_id, room_id, np_audio, isLastOfSpeech = await audio_queue.get()
 
         regex = r":(\d+(\.\d+)?)$"
         min_chunk_size = int(re.search(regex, client_id).group(1))
         speech_threshold = float(re.search(regex, room_id).group(1))
 
         try:
-            await save_chunk(np_audio, min_chunk_size, speech_threshold)
+            await save_chunk(np_audio, min_chunk_size, speech_threshold, isLastOfSpeech)
 
         except Exception as e:
             logging.error(f"Error saving audio chunk: {e}")
@@ -61,10 +61,10 @@ async def process_audio_chunks_to_pkl():
 async def process_audio_chunks():
     while True:
         # Process each chunk in the queue one at a time
-        client_id, room_id, np_audio = await audio_queue.get()
+        client_id, room_id, np_audio, isLastOfSpeech = await audio_queue.get()
 
         logging.info(f"Transcribing audio chunk for client {client_id} in room {room_id}")
-        transcribed_text = _ASR.process_audio(np_audio)
+        transcribed_text = _ASR.process_audio(np_audio, isLastOfSpeech)
 
         if transcribed_text:
             logging.info(f"Transcribed for client {client_id} in room {room_id}: {transcribed_text}")
@@ -81,7 +81,7 @@ async def process_audio_chunks():
                     logging.warning("Client disconnected.")
                     connected_clients.pop(client_id)
                     await leave_room(room_id, client_id, websocket)
-                    print(rooms)
+                    # print(rooms)
 
 async def handler(websocket):
     logging.info("New client connected!")
@@ -122,7 +122,7 @@ async def handler(websocket):
         room_id = next((key for key, value in rooms.items() if client_id in value), None)
         connected_clients.pop(client_id)
         await leave_room(room_id, client_id, websocket)
-        print(rooms)
+        # print(rooms)
 
 async def create_id(websocket):
     id = None
@@ -135,10 +135,13 @@ async def get_audio(data):
     client_id = data.get('clientId')
     room_id = data.get('roomId')
     audio_data = data.get('audioData')
+    isLastOfSpeech = data.get('isLastOfSpeech')
+    # print(f"The type of isLastOfSpeech is {type(isLastOfSpeech)}")
+    # print(f"Received chunk. isLastOfSpeech = {isLastOfSpeech}")
     np_audio = np.array(audio_data, dtype=np.float32)
     
     # Add audio chunk to the queue for processing
-    await audio_queue.put((client_id, room_id, np_audio))
+    await audio_queue.put((client_id, room_id, np_audio, isLastOfSpeech))
     # logging.info(f"Added audio chunk to queue for client {client_id} in room {room_id}")
 
 async def disconnecting(data):
@@ -211,7 +214,7 @@ async def broadcast(message, room_id=None):
                 logging.warning("Client disconnected.")
                 connected_clients.pop(client_id)
                 await leave_room(room_id, client_id, websocket)
-                print(rooms)
+                # print(rooms)
     else:
         for client_id, websocket in connected_clients.items():
             try:
@@ -222,7 +225,7 @@ async def broadcast(message, room_id=None):
                 room_id = next((key for key, value in rooms.items() if client_id in value), None)
                 if room_id is not None:
                     await leave_room(room_id, client_id, websocket)
-                    print(rooms)
+                    # print(rooms)
 
 
 
@@ -283,9 +286,10 @@ def get_absolute_path(relative_path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), relative_path)
 
 
-async def save_chunk(data, min_chunk_size, speech_threshold):
+async def save_chunk(data, min_chunk_size, speech_threshold, isLastOfSpeech):
     # Check if file exists, and initialize it if not
-    file_path = get_absolute_path(f'../benchmarking/testfiles/{min_chunk_size}-{speech_threshold}.pkl')
+
+    file_path = get_absolute_path(f'../benchmarking/testfiles/eval_files/{min_chunk_size}-{speech_threshold}.pkl')
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     
 
@@ -294,7 +298,7 @@ async def save_chunk(data, min_chunk_size, speech_threshold):
             array = pickle.load(f)
     else:
         array = [] 
-    array.append(data)
+    array.append((data, isLastOfSpeech))
 
     with open(file_path, 'wb') as f:
         pickle.dump(array, f)

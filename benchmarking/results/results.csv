@@ -1,8 +1,0 @@
-Param,Value
-Model,large-v3
-Metric,Value
-Max. chunk time,21003.7793601
-Min. chunk time,12.1853087
-Avg. chunk time,646.8553634
-Word Error Rate (WER),98.0%
-Total Transcription time,21993.082354307175
