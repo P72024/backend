@@ -7,7 +7,6 @@ def get_absolute_path(relative_path):
 
 # Load your data from CSV or string
 df = pd.read_csv(get_absolute_path('results/results_client.csv'))
-
 print(df.head())
 
 
