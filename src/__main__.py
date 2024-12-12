@@ -48,7 +48,7 @@ audio_queue = asyncio.Queue()
 
 async def process_audio_chunks_to_pkl():
     while True:
-        client_id, room_id, np_audio = await audio_queue.get()
+        client_id, _, room_id, np_audio, _, _ = await audio_queue.get()
 
         regex = r":(\d+(\.\d+)?)$"
         min_chunk_size = int(re.search(regex, client_id).group(1))
@@ -325,7 +325,7 @@ def get_absolute_path(relative_path):
 async def save_chunk(data, min_chunk_size, speech_threshold):
     # Check if file exists, and initialize it if not
 
-    file_path = get_absolute_path(f'../benchmarking/testfiles/eval_files/{min_chunk_size}-{speech_threshold}.pkl')
+    file_path = get_absolute_path(f'../benchmarking/testfiles/eval_files2/{min_chunk_size}-{speech_threshold}.pkl')
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     
 
