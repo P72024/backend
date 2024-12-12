@@ -322,7 +322,7 @@ def get_absolute_path(relative_path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), relative_path)
 
 
-async def save_chunk(data, min_chunk_size, speech_threshold, isLastOfSpeech):
+async def save_chunk(data, min_chunk_size, speech_threshold):
     # Check if file exists, and initialize it if not
 
     file_path = get_absolute_path(f'../benchmarking/testfiles/eval_files/{min_chunk_size}-{speech_threshold}.pkl')
@@ -334,7 +334,7 @@ async def save_chunk(data, min_chunk_size, speech_threshold, isLastOfSpeech):
             array = pickle.load(f)
     else:
         array = [] 
-    array.append((data, isLastOfSpeech))
+    array.append(data)
 
     with open(file_path, 'wb') as f:
         pickle.dump(array, f)
