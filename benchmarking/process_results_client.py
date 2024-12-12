@@ -39,4 +39,4 @@ print(df_grouped.head())
 
 print(get_absolute_path('results/results_client_avg.csv'))
 
-df_grouped.to_csv(get_absolute_path('results/results_client_avg.csv'))
+df_grouped.to_csv(get_absolute_path('results/results_client_avg.csv'), index=False)
