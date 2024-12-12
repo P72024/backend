@@ -46,6 +46,9 @@ class ASR:
         logging.info("[ASR] Processing audio chunk")
         transcribe_start_time = time.time()
         transcribed_text = self.transcribe(audio_chunk, self.context[room_id] if room_id in self.context else "")
+        if transcribed_text is not None:
+                while transcribed_text.endswith('…'):
+                    transcribed_text = transcribed_text[:-1]
         transcribe_time = unix_seconds_to_ms(time.time() - transcribe_start_time)
         return (transcribed_text, transcribe_time, 0)
     
