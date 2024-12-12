@@ -1,45 +1,105 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
+import numpy as np
+def calculate_distance(x, y, weight):
+    if pd.isna(x) or pd.isna(y):
+        print(f"Debug: Invalid values encountered. Avg. chunk time: {x}, WIL/WER: {y}")
+        return np.nan
+    return np.sqrt(x**2 + y**2 + weight)
 
-# Fetch results from the server using scp
+def plot_and_find_top_points(results, x, weight, werWilThreshold):
+    filtered_results = results[(results['Word Error Rate (WER)'] <= werWilThreshold) & (results['Word Information Loss (WIL)'] <= werWilThreshold)]
+    
+    plt.figure(figsize=(10, 5))
+    plt.scatter(filtered_results['Avg. chunk time'], filtered_results['Word Error Rate (WER)'])
+    plt.xlabel('Avg. Chunk Time')
+    plt.ylabel('Word Error Rate (WER)')
+    plt.title('WER vs. Avg. Chunk Time')
+    plt.grid(True)
+    plt.show()
+
+    plt.figure(figsize=(10, 5))
+    plt.scatter(filtered_results['Avg. chunk time'], filtered_results['Word Information Loss (WIL)'])
+    plt.xlabel('Avg. Chunk Time')
+    plt.ylabel('Word Information Loss (WIL)')
+    plt.title('WIL vs. Avg. Chunk Time')
+    plt.grid(True)
+    plt.show()
+    
+
+    filtered_results['distance_wer'] = filtered_results.apply(lambda row: calculate_distance(row['Avg. chunk time'], row['Word Error Rate (WER)'], weight), axis=1)
+    top_wer_points = filtered_results.nsmallest(x, 'distance_wer')
+
+    filtered_results['distance_wil'] = filtered_results.apply(lambda row: calculate_distance(row['Avg. chunk time'], row['Word Information Loss (WIL)'], weight), axis=1)
+    top_wil_points = filtered_results.nsmallest(x, 'distance_wil')
+
+    print("filtered_results Head values of 'distance_wil':\n", filtered_results['distance_wil'].sort_values(ascending=False).head())
+    print("filtered_results Tail values of 'distance_wil':\n", filtered_results['distance_wil'].sort_values(ascending=False).tail())
+    print("Top wil: Head values of 'word information loss':\n", top_wil_points['distance_wil'].sort_values(ascending=False).head())
+    print("Top wil: Tail values of 'word information loss':\n", top_wil_points['distance_wil'].sort_values(ascending=False).tail())
+    
+    combined_points = pd.merge(top_wer_points, top_wil_points)
+
+    print("combined points: Head values of 'distance_wil':\n", combined_points['distance_wil'].sort_values(ascending=False).head())
+    print("combined points: Tail values of 'distance_wil':\n", combined_points['distance_wil'].sort_values(ascending=False).tail())
+
+    plt.figure(figsize=(10, 5))
+    plt.scatter(combined_points['Word Information Loss (WIL)'], combined_points['Word Error Rate (WER)'])
+    plt.xlabel('Word Information Loss (WIL)')
+    plt.ylabel('Word Error Rate (WER)')
+    plt.title('WER vs. WIL for Combined Points')
+    plt.grid(True)
+    plt.show()
+
+    return combined_points
+
+def display_table(df):
+    import tkinter as tk
+    from tkinter import ttk
+
+    root = tk.Tk()
+    root.title("Top Combined Points")
+
+    frame = ttk.Frame(root)
+    frame.pack(fill='both', expand=True)
+
+    tree = ttk.Treeview(frame, columns=list(df.columns), show='headings')
+    tree.pack(fill='both', expand=True)
+    
+    # Add a horizontal scrollbar
+    hsb = ttk.Scrollbar(frame, orient='horizontal', command=tree.xview)
+    hsb.pack(side='bottom', fill='x')
+    tree.configure(xscrollcommand=hsb.set)
+
+    for col in df.columns:
+        tree.heading(col, text=col)
+        tree.column(col, anchor='center')
+
+    for index, row in df.iterrows():
+        tree.insert('', 'end', values=list(row))
+
+    root.mainloop()
 
 
-# Load the data
-results = pd.read_csv('./results/results_avg.csv')
-results["Chunk Size"] = results["Filename"].str.extract(r"^(\d+)-")[0].astype(int)  # Extract Chunk Size
-results["VAD Threshold"] = results["Filename"].str.extract(r"-(\d+\.\d+).pkl")[0].astype(float)  # Extract VAD Threshold
-results = results.drop(columns=["Filename"])
+results = pd.read_csv('./results/results.csv')
+results_client = pd.read_csv('./results/results_client.csv')
 
-# results = results.where(results["model_type"] == "distil-large-v3")
 results['Word Error Rate (WER)'] = results['Word Error Rate (WER)'].str.rstrip('%').astype(float)
 results['Word Information Loss (WIL)'] = results['Word Information Loss (WIL)'].str.rstrip('%').astype(float)
 
-config_params = ['Chunk Size', 'VAD Threshold', 'model_type', 'beam_size', 'use_context', 'confidence_based', 'num_workers', 'confidence_limit', 'Word Error Rate (WER)', 'Word Information Loss (WIL)', 'Avg. chunk time', 'Max. chunk time']
-# Sort data by Word Error Rate (WER) for ordered plotting
-results_avg_sorted: pd.DataFrame = results.sort_values(by=['Word Information Loss (WIL)', 'Word Error Rate (WER)', 'Avg. chunk time','Max. chunk time'])
-print(f"Lowest WER config:\n{results_avg_sorted.head(15)[config_params].to_string()}")
 
-# Convert boolean parameters to strings
-results_avg_sorted['use_context'] = results_avg_sorted['use_context'].astype(str)
-results_avg_sorted['confidence_based'] = results_avg_sorted['confidence_based'].astype(str)
+# Parameters
+x = 400
+weight = 1  
 
-# Define the parameters to plot
-params = ['model_type', 'beam_size', 'use_context', 'confidence_based', 'num_workers', 'confidence_limit']
-metrics = ['Word Error Rate (WER)', 'Word Information Loss (WIL)', 'Avg. chunk time']
 
-# Create line plots with vertical error bars and connecting lines for each parameter and metric
-for param in params:
-    for metric in metrics:
-        plt.figure(figsize=(10, 6))
-        means = results_avg_sorted.groupby(param)[metric].mean()
-        stds = results_avg_sorted.groupby(param)[metric].std()
-        plt.errorbar(x=means.index, y=means, yerr=stds, fmt='o', capsize=5, capthick=2, elinewidth=2)
-        plt.plot(means.index, means, marker='o')
-        plt.title(f'{metric} by {param}')
-        plt.xlabel(param)
-        plt.ylabel(metric)
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-        plt.grid(True)
-        plt.show()
+# Call the function
+combined_points = plot_and_find_top_points(results, x, weight, 20.0)
+
+combined_points['distance_combined'] = combined_points.apply(lambda row: calculate_distance(row['Word Information Loss (WIL)'], row['Word Error Rate (WER)'], weight), axis=1)
+top_combined_points = combined_points.nsmallest(x, 'distance_combined')
+
+
+top_combined_points.to_csv('./results/top_combined_points.csv', index=False)
+# Display the top x data points in a Tkinter window
+display_table(top_combined_points)

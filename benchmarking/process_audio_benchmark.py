@@ -105,7 +105,7 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
     peak_RAM_usage = 0
     avg_RAM_usage = 0
 
-    for (chunk, _) in chunks:
+    for chunk in chunks:
         (new_text, transcribe_time, _) = asr.process_audio(chunk, '1')
         transcribed_text += " " +  new_text
         times.append(transcribe_time)
@@ -181,8 +181,8 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
         "Max. chunk time": max_chunk_time,
         "Min. chunk time": min_chunk_time,
         "Avg. chunk time": average_chunk_time,
-        "Word Error Rate (WER)": f"{measures['wer'] * 100:.1f}%",
-        "Word Information Loss (WIL)": f"{measures['wil'] * 100:.1f}%",
+        "Word Error Rate (WER)": measures['wer'] * 100,
+        "Word Information Loss (WIL)": measures['wil'] * 100,
         "Total Transcription time": total_time,
         "Total GPU VRAM Usage": total_GPU_VRAM_usage,
         "Total GPU Clock Speed": total_GPU_clock_usage,
@@ -198,7 +198,9 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
     return results
 
 def simulate_client(chunk, client_id, result_dict, asr_model):
-    result_dict[client_id] += " " +  asr_model.process_audio(chunk, client_id)
+    (new_text, transcribe_time, _) = asr_model.process_audio(chunk, client_id)
+    result_dict[client_id]["transcription"] += " " +  new_text
+    result_dict[client_id]["transcribe_time"] = transcribe_time
 
 async def process_audio_stress_test(chunks_pkl, txt_filename, params: dict, use_gpu: bool):
     # Define required keys and their expected types
@@ -239,7 +241,10 @@ async def process_audio_stress_test(chunks_pkl, txt_filename, params: dict, use_
 
     result_dict = dict()
     for client_id in range(0, params["num_concurrent_clients"]):
-        result_dict[client_id] = ""
+        result_dict[client_id] = { 
+            "transcription": "",
+            "transcribe_time": 0,
+        }
 
     actual_text = ""
     with open(chunks_pkl, 'rb') as f:
@@ -265,7 +270,7 @@ async def process_audio_stress_test(chunks_pkl, txt_filename, params: dict, use_
     avg_RAM_usage = 0
 
     # Change it so that simulated clients don't play the same audio.
-    for (chunk, isLastOfSpeech) in chunks:
+    for chunk in chunks:
         start_total_time = time.time()
         client_threads: List[threading.Thread] = []
         for client_id in range(0, params["num_concurrent_clients"]):  # Simulating clients
@@ -330,7 +335,7 @@ async def process_audio_stress_test(chunks_pkl, txt_filename, params: dict, use_
     measures = dict()
     results = dict()
     for client_id in range(0, params["num_concurrent_clients"]):
-        finaltext = " ".join(transforms(result_dict[client_id])[0])
+        finaltext = " ".join(transforms(result_dict[client_id]["transcription"])[0])
         transformed_actual_text = " ".join(transforms(actual_text)[0])
         # print(f"The actual text is:\n{transformed_actual_text}")
         # print(f'\n\nThe Transcribed text was:\n{finaltext}')
@@ -353,8 +358,8 @@ async def process_audio_stress_test(chunks_pkl, txt_filename, params: dict, use_
             "Max. chunk time": max_chunk_time,
             "Min. chunk time": min_chunk_time,
             "Avg. chunk time": average_chunk_time,
-            "Word Error Rate (WER)": f"{measures[client_id]['wer'] * 100:.1f}%",
-            "Word Information Loss (WIL)": f"{measures[client_id]['wil'] * 100:.1f}%",
+            "Word Error Rate (WER)": measures[client_id]['wer'] * 100,
+            "Word Information Loss (WIL)": measures[client_id]['wil'] * 100,
             "Total Transcription time": total_time,
             "Total GPU VRAM Usage": total_GPU_VRAM_usage,
             "Total GPU Clock Speed": total_GPU_clock_usage,

@@ -26,14 +26,13 @@ class ASR:
         self.max_context_length = max_context_length
         self.beam_size = beam_size
 
-    def transcribe(self, audio_chunk: np.float32, context: str) -> str:  
+    def transcribe(self, audio_chunk: np.float32) -> str:  
         transcribed_text = ""
 
         segments, _ = self.whisper_model.transcribe(
             audio_chunk, 
             language='en',
             beam_size=self.beam_size,
-            initial_prompt=context,
         )
         
         for segment in segments:
@@ -45,7 +44,7 @@ class ASR:
     def process_audio(self, audio_chunk: np.float32, room_id) -> tuple[str, str, str]:
         logging.info("[ASR] Processing audio chunk")
         transcribe_start_time = time.time()
-        transcribed_text = self.transcribe(audio_chunk, self.context[room_id] if room_id in self.context else "")
+        transcribed_text = self.transcribe(audio_chunk)
         if transcribed_text is not None:
                 while transcribed_text.endswith('…'):
                     transcribed_text = transcribed_text[:-1]
