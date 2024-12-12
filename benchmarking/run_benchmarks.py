@@ -224,7 +224,7 @@ async def run_benchmarking(args):
     combinations = await generate_combinations(config_file_path)
     print(f"Using GPU: {use_gpu}")
     files = []
-    for file in os.listdir(get_absolute_path(folder_avg_path)):
+    for file in os.listdir(folder_avg_path):
         if file.endswith('.pkl'):
             files.append((file, folder_avg_path + file))
     # Example of conditional usage based on use_gpu
@@ -352,7 +352,7 @@ async def run_stress_testing(args):
     combinations = generate_stress_test_combinations(config_file_path)
     print(f"Using GPU: {use_gpu}")
     files = []
-    for file in os.listdir(get_absolute_path(folder_avg_path)):
+    for file in os.listdir(folder_avg_path):
         if file.endswith('.pkl'):
             files.append((file, folder_avg_path + file))
     # Example of conditional usage based on use_gpu

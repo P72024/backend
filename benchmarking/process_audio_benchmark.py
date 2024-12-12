@@ -77,7 +77,6 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
     else:
         asr = ASR(model_size=params["model_type"],
                 beam_size=params["beam_size"],
-                use_context=params["use_context"],
                 num_workers=params["num_workers"],
                 device="cuda" if use_gpu else "auto",
                 compute_type="auto")
@@ -106,9 +105,9 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
     peak_RAM_usage = 0
     avg_RAM_usage = 0
 
-    for (chunk) in chunks:
+    for (chunk, _) in chunks:
         start_total_time = time.time()
-        new_text = asr.process_audio(chunk, '1')
+        (new_text, _, _) = asr.process_audio(chunk, '1')
         if new_text is not None:
             while new_text.endswith('…'):
                 new_text = new_text[:-1]
