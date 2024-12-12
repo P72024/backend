@@ -82,6 +82,10 @@ class ASR_tweaked:
             total_prob += prob
             transcribed_text += " " + text.strip()
             transcribed_text.strip()
+            
+        if transcribed_text is not None:
+                while transcribed_text.endswith('…'):
+                    transcribed_text = transcribed_text[:-1]
 
         if total_prob != 0 and len(transcribed_words) != 0:
             logging.info(total_prob / len(transcribed_words))
