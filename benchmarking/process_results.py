@@ -79,20 +79,30 @@ results['Word Error Rate (WER)'] = results['Word Error Rate (WER)'].str.rstrip('
 results['Word Information Loss (WIL)'] = results['Word Information Loss (WIL)'].str.rstrip('%').astype(float)
 
 
-# Parameters
-top_x_num_points = 10000
-weight = 1
-max_werWilThreshold = 30
-take_latency_into_account = False
 
-# Call the function
-combined_points = plot_and_find_top_points(results, results_client, top_x_num_points, weight, max_werWilThreshold, take_latency_into_account)
+def run_process_results (with_latency):
+    # Parameters
+    top_x_num_points = 10000
+    weight = 1
+    max_werWilThreshold = 30
+    take_latency_into_account = with_latency
 
-combined_points['distance_combined'] = combined_points.apply(lambda row: calculate_distance(row['Word Information Loss (WIL)'], row['Word Error Rate (WER)'], weight), axis=1)
-top_combined_points = combined_points.nsmallest(top_x_num_points, 'distance_combined')
+    # Call the function
+    combined_points = plot_and_find_top_points(results, results_client, top_x_num_points, weight, max_werWilThreshold, take_latency_into_account)
 
-top_combined_points.to_csv('./results/top_combined_points.csv', index=False)
+    combined_points['distance_combined'] = combined_points.apply(lambda row: calculate_distance(row['Word Information Loss (WIL)'], row['Word Error Rate (WER)'], weight), axis=1)
+    top_combined_points = combined_points.nsmallest(top_x_num_points, 'distance_combined')
 
-distance_total_time_table(top_combined_points, take_latency_into_account)
+    if take_latency_into_account:
+        top_combined_points.to_csv('./results/top_combined_points_with_latency.csv', index=False)
+    else: 
+        top_combined_points.to_csv('./results/top_combined_points_without_latency.csv', index=False)
 
-process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], './results/lowest_distance_per_interval.csv')
+    distance_total_time_table(top_combined_points, take_latency_into_account)
+
+    if take_latency_into_account:
+        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], './results/lowest_distance_per_interval_with_latency.csv')
+    else:
+        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], './results/lowest_distance_per_interval_without_latency.csv')
+
+run_process_results(True)
