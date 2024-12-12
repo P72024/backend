@@ -74,7 +74,6 @@ class ASR_tweaked:
 
         transcribe_start_time = time.time()
         transcribed_words = self.transcribe(audio_chunk, self.context[room_uuid])
-        transcribe_time = unix_seconds_to_ms(time.time() - transcribe_start_time)
 
         transcribed_text = ""
         total_prob = 0
@@ -87,6 +86,8 @@ class ASR_tweaked:
                 while transcribed_text.endswith('…'):
                     transcribed_text = transcribed_text[:-1]
 
+        transcribe_time = unix_seconds_to_ms(time.time() - transcribe_start_time)
+        
         if total_prob != 0 and len(transcribed_words) != 0:
             logging.info(total_prob / len(transcribed_words))
             if total_prob / len(transcribed_words) > self.conf_limit and transcribed_words[-1][3] > self.conf_limit:
