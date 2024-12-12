@@ -6,8 +6,7 @@ def get_absolute_path(relative_path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), relative_path)
 
 # Load your data from CSV or string
-df = pd.read_csv(get_absolute_path('results/results_client.csv'))
-print(df.head())
+df = pd.read_csv(get_absolute_path('results/results_client2.csv'))
 
 
 # # Compute the averages for each combination of min_chunk_size and speech_threshold
@@ -33,9 +32,5 @@ column_order = ["min_chunk_size", "speech_threshold", "avg_VADFilterTime", "avg_
 
 df_grouped = df_grouped[column_order]
 
-# Save or display the result
-print(df_grouped.head())
 
-print(get_absolute_path('results/results_client_avg.csv'))
-
-df_grouped.to_csv(get_absolute_path('results/results_client_avg.csv'), index=False)
+df_grouped.to_csv(get_absolute_path('results/results_client_avg2.csv'), index=False)
