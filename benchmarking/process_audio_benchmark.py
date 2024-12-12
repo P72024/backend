@@ -106,13 +106,9 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
     avg_RAM_usage = 0
 
     for (chunk, _) in chunks:
-        start_total_time = time.time()
-        (new_text, _, _) = asr.process_audio(chunk, '1')
-        if new_text is not None:
-            while new_text.endswith('…'):
-                new_text = new_text[:-1]
-            transcribed_text += " " +  new_text
-        times.append(time.time() - start_total_time)
+        (new_text, transcribe_time, _) = asr.process_audio(chunk, '1')
+        transcribed_text += " " +  new_text
+        times.append(transcribe_time)
         ram_usage_chunk, gpu_usage_vram_chunk, gpu_usage_clock_chunk = measure_usage()
         #VRAM
         total_GPU_VRAM_usage += gpu_usage_vram_chunk
@@ -202,11 +198,7 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
     return results
 
 def simulate_client(chunk, client_id, result_dict, asr_model):
-    new_text = asr_model.process_audio(chunk)
-    if new_text is not None:
-        while new_text.endswith('…'):
-            new_text = new_text[:-1]
-        result_dict[client_id] += " " +  new_text
+    result_dict[client_id] += " " +  asr_model.process_audio(chunk, client_id)
 
 async def process_audio_stress_test(chunks_pkl, txt_filename, params: dict, use_gpu: bool):
     # Define required keys and their expected types
@@ -241,7 +233,6 @@ async def process_audio_stress_test(chunks_pkl, txt_filename, params: dict, use_
     else:
         asr = ASR(model_size=params["model_type"],
                 beam_size=params["beam_size"],
-                use_context=params["use_context"],
                 num_workers=params["num_workers"],
                 device="cuda" if use_gpu else "auto",
                 compute_type="auto")
