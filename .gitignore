@@ -2,6 +2,8 @@ venv
 share
 *.log
 
+benchmarking/testfiles/**
+
 # Byte-compiled / optimized / DLL files
 src/__pycache__/
 src/ASR/__pycache__/
