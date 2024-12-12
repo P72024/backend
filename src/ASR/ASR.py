@@ -26,14 +26,13 @@ class ASR:
         self.max_context_length = max_context_length
         self.beam_size = beam_size
 
-    def transcribe(self, audio_chunk: np.float32, context: str) -> str:  
+    def transcribe(self, audio_chunk: np.float32) -> str:  
         transcribed_text = ""
 
         segments, _ = self.whisper_model.transcribe(
             audio_chunk, 
             language='en',
             beam_size=self.beam_size,
-            initial_prompt=context,
         )
         
         for segment in segments:
