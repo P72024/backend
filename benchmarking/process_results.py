@@ -19,9 +19,9 @@ def plot_and_find_top_points(results, results_client, top_x_num_points, weight, 
         filtered_results["total_chunk_time"] = filtered_results["Avg. chunk time"]
     if take_latency_into_account:
         # Plot the scatter plot for WER vs. Total Chunk Time
-        plot_scatter(filtered_results, 'total_chunk_time', 'Word Error Rate (WER)', 'Avg. Chunk Time', 'Word Error Rate (WER)', 'WER vs. Total Chunk Time')
+        plot_scatter(filtered_results, 'total_chunk_time', 'Word Error Rate (WER)', 'Total chunk time', 'Word Error Rate (WER)', 'WER vs. Total Chunk Time')
         # Plot the scatter plot for WIL vs. Total Chunk Time
-        plot_scatter(filtered_results, 'total_chunk_time', 'Word Information Loss (WIL)', 'Avg. Chunk Time', 'Word Information Loss (WIL)', 'WIL vs. Total Chunk Time')
+        plot_scatter(filtered_results, 'total_chunk_time', 'Word Information Loss (WIL)', 'Total chunk time', 'Word Information Loss (WIL)', 'WIL vs. Total Chunk Time')
     else:
         # Plot the scatter plot for WER vs. Avg. Chunk Time
         plot_scatter(filtered_results, 'Avg. chunk time', 'Word Error Rate (WER)', 'Avg. Chunk Time', 'Word Error Rate (WER)', 'WER vs. Avg. Chunk Time')
@@ -81,8 +81,8 @@ results['Word Information Loss (WIL)'] = results['Word Information Loss (WIL)'].
 
 # Parameters
 top_x_num_points = 10000
-weight = 1  
-max_werWilThreshold = 100.0
+weight = 1
+max_werWilThreshold = 30
 take_latency_into_account = False
 
 # Call the function
