@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import csv
 import os
+import re
 import sys
 from datetime import datetime
 from itertools import product
@@ -22,6 +23,7 @@ def get_absolute_path(relative_path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), relative_path)
 
 folder_avg_path = 'testfiles/eval_files/'
+folder_stress_path = 'testfiles/'
 results_file_path = get_absolute_path("results/results.csv")
 results_avg_file_path = get_absolute_path("results/results_avg.csv")
 stress_test_results_file_path = get_absolute_path("results/stress_test_results.csv")
@@ -44,7 +46,7 @@ config_file_path = get_absolute_path("config.yaml")
 
 # Final updated combinations
         
-num_iterations = 3
+num_iterations = 2
 
 
 async def run_benchmarks(use_gpu : bool, combinations, files):
@@ -236,11 +238,10 @@ async def run_benchmarking(args):
 
 
 
-async def run_stress_test(use_gpu: bool, combinations, files):
+async def run_stress_test(use_gpu: bool, combinations, pkl_files, txt_files):
     total_combinations = len(combinations)
-    total_files = len(files)
-    total_progress_length = total_files * total_combinations * num_iterations
-    print(f"Running Stress testing with the following settings:\nNumber of combination: {total_combinations}\nNumber of Iterations pr. Combination: {num_iterations}\nNumber of files: {total_files}\nGPU Enabled: {use_gpu}")
+    total_progress_length = total_combinations * num_iterations
+    print(f"Running Stress testing with the following settings:\nNumber of combination: {total_combinations}\nNumber of Iterations pr. Combination: {num_iterations}\nGPU Enabled: {use_gpu}")
     with Progress(
     TextColumn("[progress.description]{task.description}"),
     BarColumn(),
@@ -249,55 +250,101 @@ async def run_stress_test(use_gpu: bool, combinations, files):
     ) as progress:
         iterationProgress = progress.add_task("[yellow]Running Iterations...", total=num_iterations)
         combinationsProgress = progress.add_task("[blue]Benchmarking Combinations...", total=total_combinations)
-        fileProgress = progress.add_task("[red]Benchmarking files...", total=total_files)
         totalProgression = progress.add_task('[green]Total Progress...', total=total_progress_length)
 
+        for i, params in enumerate(combinations, 1):
+            progress.reset(iterationProgress)
+            progress.console.print(f"Combination {i} of {total_combinations}: {params}")
 
-        for file_idx, (filename, file) in enumerate(files, 1):
-            progress.reset(combinationsProgress)
-            for i, params in enumerate(combinations, 1):
-                progress.reset(iterationProgress)
-                progress.console.print(f"Combination {i} of {total_combinations} with file {file_idx} of {total_files}: {params}")
+            results_array = []
 
-                results_array = []
-                for i in range(num_iterations):
-                    transcription_results = await process_audio_stress_test(f"{get_absolute_path(file)}", f"{get_absolute_path('testfiles/benchmark.txt')}", params, use_gpu)
-                    results_array.append(transcription_results)
+            for i in range(num_iterations):
+                transcription_results = await process_audio_stress_test(pkl_files, txt_files, params, use_gpu)
+                results_array.append(transcription_results)
 
-                    csv_row = [
-                        datetime.today().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
-                        filename
-                    ]
+                csv_row = [
+                    datetime.today().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                ]
 
-                    for (key, val) in params.items():
-                        if key == 'confidence_limit' and params["confidence_based"] == False:
-                            csv_row.append("N/A")
-                        else:
-                            csv_row.append(val)
-
-                    for (_, val) in transcription_results.items():
+                for (key, val) in params.items():
+                    if key == 'confidence_limit' and params["confidence_based"] == False:
+                        csv_row.append("N/A")
+                    else:
                         csv_row.append(val)
-                    
-                    with open(stress_test_results_file_path, "a", newline='') as f:
-                        csv_writer = csv.writer(f)
-                        csv_writer.writerow(csv_row)
-                    progress.update(iterationProgress, advance=1)
-                    progress.update(totalProgression, advance=1)
+                client_results = []
+                for (client_id, val) in transcription_results.items():
+                    client_results.append({ client_id: val })
+                csv_row.append(client_results)
 
-                
-                progress.update(combinationsProgress, advance=1)
-            progress.update(fileProgress, advance=1)
+                with open(stress_test_results_file_path, "a", newline='') as f:
+                    csv_writer = csv.writer(f)
+                    csv_writer.writerow(csv_row)
+                progress.update(iterationProgress, advance=1)
+                progress.update(totalProgression, advance=1)
+            
+            results = {}
+            averages = {}
+
+            # Handle numeric values or percentages
+            for result in results_array:
+                for client_id, value in result.items():
+                    results[client_id] = {}
+                    averages[client_id] = {}
+                    for key, values in value.items():
+                        print(type(values))
+                        val = values if isinstance(values, (int, float)) else "N/A"
+                        if key not in averages[client_id]:
+                            averages[client_id][key] = [val]
+                        else:
+                            averages[client_id][key].append(val)
+                            
+            for client_id, value_object in averages.items():
+                for key, value in value_object.items():
+                    results[client_id][key] = sum(value) / num_iterations if "N/A" not in value else "N/A"
+                    
+            # Print or use the final averaged results
+            # print(f"The average result is: {results}")
+
+            csv_row = [
+                datetime.today().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+            ]
+
+            for (key, val) in params.items():
+                if key == 'confidence_limit' and params["confidence_based"] == False:
+                    csv_row.append("N/A")
+                else:
+                    csv_row.append(val)
+
+            client_averages = []
+            for (client_id, val) in results.items():
+                client_averages.append({ client_id: val })
+            csv_row.append(client_averages)
+
+            with open(results_avg_file_path, "a", newline='') as f:
+                csv_writer = csv.writer(f)
+                csv_writer.writerow(csv_row)
+            
+            progress.update(combinationsProgress, advance=1)
 
 
 def generate_stress_test_combinations(config_path):
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
     parameters = config["stress_test"]["parameters"]["global"]
-    confidence_limits = config["grid_search"]["parameters"]["confidence"]["confidence_limit"]
+    confidence_limits = config["stress_test"]["parameters"]["confidence"]["confidence_limit"]
     keys, values = zip(*parameters.items())
     combinations = [dict(zip(keys, combo)) for combo in product(*values)]
     updated_combinations = []
     for combination in combinations:
+        pkl_files = []
+        txt_files = []
+        for file in os.listdir(folder_stress_path):
+            if file.startswith(str(combination["num_concurrent_clients"])):
+                for pkl_file in os.listdir(folder_stress_path + file):
+                    if pkl_file.endswith('.pkl'):
+                        pkl_files.append(get_absolute_path(os.path.join(folder_stress_path, file, pkl_file)))
+                        txt_files.append(get_absolute_path(os.path.join(folder_stress_path, file, re.sub(".pkl", ".txt", pkl_file))))
+
         if combination["confidence_based"]:
             # Update the original combination with the first confidence limit
             combination["confidence_limit"] = confidence_limits[0]
@@ -312,26 +359,19 @@ def generate_stress_test_combinations(config_path):
             # Keep the combination as is if confidence_based is False
             combination["confidence_limit"] = 0.0
             updated_combinations.append(combination)
-    return updated_combinations
+    return updated_combinations, pkl_files, txt_files
 
 async def run_stress_testing(args):
     titles = [
         "Date",
-        "Filename",
-        "num_concurrent_clients",
+        "model_type",
+        "beam_size",
+        "use_context",
+        "confidence_based",
         "num_workers",
-        "Word Error Rate (WER)",
-        "Word Information Loss (WIL)",
-        "Total Transcription Time",
-        "Total GPU VRAM Usage",
-        "Total GPU Clock Speed",
-        "Peak GPU VRAM Usage",
-        "Peak GPU Clock Speed",
-        "Avg. GPU VRAM Usage",
-        "Avg. GPU Clock Speed",
-        "Total RAM Usage",
-        "Peak RAM Usage",
-        "Avg. RAM Usage",
+        "num_concurrent_clients",
+        "confidence_limit",
+        "client_results"
     ]
 
     folder_iter = os.path.dirname(stress_test_results_file_path)
@@ -349,18 +389,18 @@ async def run_stress_testing(args):
         csv.writer(f).writerow(titles)
 
     use_gpu = args.gpu  # True if --gpu is passed, otherwise False
-    combinations = generate_stress_test_combinations(config_file_path)
+    combinations, pkl_files, txt_files = generate_stress_test_combinations(config_file_path)
     print(f"Using GPU: {use_gpu}")
     files = []
-    for file in os.listdir(folder_avg_path):
-        if file.endswith('.pkl'):
-            files.append((file, folder_avg_path + file))
+    # for file in os.listdir(folder_avg_path):
+    #     if file.endswith('.pkl'):
+    #         files.append((file, folder_avg_path + file))
     # Example of conditional usage based on use_gpu
     if use_gpu:
         print("Running stress tests on GPU...")
     else:
         print("Running stress tests on CPU...")
-    await run_stress_test(use_gpu, combinations, files)
+    await run_stress_test(use_gpu, combinations, pkl_files, txt_files)
     
 
 async def main():

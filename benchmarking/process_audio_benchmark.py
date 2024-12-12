@@ -20,6 +20,21 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src'
 from ASR.ASR import ASR
 from ASR.tweaked import ASR_tweaked
 
+## GPU VALUES
+total_GPU_VRAM_usage = "total_GPU_VRAM_usage"
+peak_GPU_VRAM_usage = "peak_GPU_VRAM_usage"
+avg_GPU_VRAM_usage = "avg_GPU_VRAM_usage"
+
+total_GPU_clock_usage = "total_GPU_clock_usage"
+peak_GPU_clock_usage = "peak_GPU_clock_usage"
+avg_GPU_clock_usage = "avg_GPU_clock_usage"
+
+
+## RAM VALUES
+total_RAM_usage = "total_RAM_usage"
+peak_RAM_usage = "peak_RAM_usage"
+avg_RAM_usage = "avg_RAM_usage"
+
 
 def measure_usage():
     # Get RAM usage in GB
@@ -181,8 +196,8 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
         "Max. chunk time": max_chunk_time,
         "Min. chunk time": min_chunk_time,
         "Avg. chunk time": average_chunk_time,
-        "Word Error Rate (WER)": measures['wer'] * 100,
-        "Word Information Loss (WIL)": measures['wil'] * 100,
+        "Word Error Rate (WER)": round(measures['wer'] * 100, 1),
+        "Word Information Loss (WIL)": round(measures['wil'] * 100, 1),
         "Total Transcription time": total_time,
         "Total GPU VRAM Usage": total_GPU_VRAM_usage,
         "Total GPU Clock Speed": total_GPU_clock_usage,
@@ -197,12 +212,30 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
 
     return results
 
-def simulate_client(chunk, client_id, result_dict, asr_model):
-    (new_text, transcribe_time, _) = asr_model.process_audio(chunk, client_id)
-    result_dict[client_id]["transcription"] += " " +  new_text
-    result_dict[client_id]["transcribe_time"] = transcribe_time
+def simulate_client(chunks, client_id, result_dict, usages_dict, times_dict, asr_model):
+    for (chunk, _) in chunks:
+        (new_text, transcribe_time, _) = asr_model.process_audio(chunk, client_id)
+        times_dict[client_id].append(transcribe_time)
+        result_dict[client_id]["transcription"] += " " +  new_text
+        result_dict[client_id]["transcribe_time"] = transcribe_time
 
-async def process_audio_stress_test(chunks_pkl, txt_filename, params: dict, use_gpu: bool):
+        ram_usage_chunk, gpu_usage_vram_chunk, gpu_usage_clock_chunk = measure_usage()
+        #VRAM
+        usages_dict[client_id][total_GPU_VRAM_usage] += gpu_usage_vram_chunk
+        if gpu_usage_vram_chunk > usages_dict[client_id][peak_GPU_VRAM_usage]:
+            usages_dict[client_id][peak_GPU_VRAM_usage] = gpu_usage_vram_chunk
+
+        #CLOCKSPEED
+        usages_dict[client_id][total_GPU_clock_usage] += gpu_usage_clock_chunk
+        if gpu_usage_clock_chunk > usages_dict[client_id][peak_GPU_clock_usage]:
+            usages_dict[client_id][peak_GPU_clock_usage] = gpu_usage_clock_chunk
+
+        #RAM
+        usages_dict[client_id][total_RAM_usage] += ram_usage_chunk
+        if ram_usage_chunk > usages_dict[client_id][peak_RAM_usage]:
+            usages_dict[client_id][peak_RAM_usage] = ram_usage_chunk
+
+async def process_audio_stress_test(chunks_pkls, txt_filenames, params: dict, use_gpu: bool):
     # Define required keys and their expected types
     required_keys_with_types = {
         "num_workers": int,
@@ -240,79 +273,78 @@ async def process_audio_stress_test(chunks_pkl, txt_filename, params: dict, use_
                 compute_type="auto")
 
     result_dict = dict()
+    chunks_dict = dict()
+    times_dict = dict()
+    usages_dict = dict()
+
     for client_id in range(0, params["num_concurrent_clients"]):
         result_dict[client_id] = { 
             "transcription": "",
             "transcribe_time": 0,
         }
 
-    actual_text = ""
-    with open(chunks_pkl, 'rb') as f:
-        chunks = pickle.load(f)
-    # print(f"Number of chunks: {len(chunks)}")
-    # sf.write("benchmark.wav", chunks, samplerate=sr)
-    #Start timer
-    times = []
+        with open(chunks_pkls[client_id], 'rb') as f:
+            chunks_dict[client_id] = pickle.load(f)
+
+        times_dict[client_id] = []
+
+        usages_dict[client_id] = {
+            total_GPU_VRAM_usage: "",
+            peak_GPU_VRAM_usage: "",
+            avg_GPU_VRAM_usage: "",
+            total_GPU_clock_usage: "",
+            peak_GPU_clock_usage: "",
+            avg_GPU_clock_usage: "",
+            total_RAM_usage: "",
+            peak_RAM_usage: "",
+            avg_RAM_usage: "",
+        }
+        ## GPU VALUES
+        usages_dict[client_id][total_GPU_VRAM_usage] = 0
+        usages_dict[client_id][peak_GPU_VRAM_usage] = 0
+        usages_dict[client_id][avg_GPU_VRAM_usage] = 0
+
+        usages_dict[client_id][total_GPU_clock_usage] = 0
+        usages_dict[client_id][peak_GPU_clock_usage] = 0
+        usages_dict[client_id][avg_GPU_clock_usage] = 0
+
+        ## RAM VALUES
+        usages_dict[client_id][total_RAM_usage] = 0
+        usages_dict[client_id][peak_RAM_usage] = 0
+        usages_dict[client_id][avg_RAM_usage] = 0
+
+    client_threads: List[threading.Thread] = []
+    for client_id in range(0, params["num_concurrent_clients"]):  # Simulating clients
+        client_thread = threading.Thread(
+            target=simulate_client, args=(chunks_dict[client_id], client_id, result_dict, usages_dict, times_dict, asr)
+        )
+        client_threads.append(client_thread)
+        client_thread.start()
     
-    ## GPU VALUES
-    total_GPU_VRAM_usage = 0
-    peak_GPU_VRAM_usage = 0
-    avg_GPU_VRAM_usage = 0
+    for client_thread in client_threads:
+        client_thread.join()
 
-    total_GPU_clock_usage = 0
-    peak_GPU_clock_usage = 0
-    avg_GPU_clock_usage = 0
+    for client_id in range(0, params["num_concurrent_clients"]):
+        usages_dict[client_id][avg_GPU_VRAM_usage] = usages_dict[client_id][total_GPU_VRAM_usage] / len(chunks_pkls[client_id])
+        usages_dict[client_id][avg_GPU_clock_usage] = usages_dict[client_id][total_GPU_clock_usage] / len(chunks_pkls[client_id])
+        usages_dict[client_id][avg_RAM_usage] = usages_dict[client_id][total_RAM_usage] / len(chunks_pkls[client_id])
 
+    total_times_dict = dict()
+    average_chunk_times_dict = dict()
+    max_chunk_times_dict = dict()
+    min_chunk_times_dict = dict()
+    actual_texts = dict()
 
-    ## RAM VALUES
-    total_RAM_usage = 0
-    peak_RAM_usage = 0
-    avg_RAM_usage = 0
+    for client_id in range(0, params["num_concurrent_clients"]):
+        total_times_dict[client_id] = sum(times_dict[client_id])
+        average_chunk_times_dict[client_id] = "{:.7f}".format(np.average(times_dict[client_id]))
+        max_chunk_times_dict[client_id] = "{:.7f}".format(max(times_dict[client_id]))
+        min_chunk_times_dict[client_id] = "{:.7f}".format(min(times_dict[client_id]))
 
-    # Change it so that simulated clients don't play the same audio.
-    for chunk in chunks:
-        start_total_time = time.time()
-        client_threads: List[threading.Thread] = []
-        for client_id in range(0, params["num_concurrent_clients"]):  # Simulating clients
-            client_thread = threading.Thread(
-                target=simulate_client, args=(chunk, client_id, result_dict, asr)
-            )
-            client_threads.append(client_thread)
-            client_thread.start()
-        
-        for client_thread in client_threads:
-            client_thread.join()
-        times.append(time.time() - start_total_time) # Are we interested in timing each client or total? The same for GPU and RAM usage
-        ram_usage_chunk, gpu_usage_vram_chunk, gpu_usage_clock_chunk = measure_usage()
-        #VRAM
-        total_GPU_VRAM_usage += gpu_usage_vram_chunk
-        if gpu_usage_vram_chunk > peak_GPU_VRAM_usage:
-            peak_GPU_VRAM_usage = gpu_usage_vram_chunk
-
-        #CLOCKSPEED
-        total_GPU_clock_usage += gpu_usage_clock_chunk
-        if gpu_usage_clock_chunk > peak_GPU_clock_usage:
-            peak_GPU_clock_usage = gpu_usage_clock_chunk
-
-        #RAM
-        total_RAM_usage += ram_usage_chunk
-        if ram_usage_chunk > peak_RAM_usage:
-            peak_RAM_usage = ram_usage_chunk
-
-    avg_GPU_VRAM_usage= total_GPU_VRAM_usage / len(chunks)
-    avg_GPU_clock_usage = total_GPU_clock_usage / len(chunks)
-    avg_RAM_usage = total_RAM_usage / len(chunks)
-    #End timer
-    #total time elapsed
-    total_time = sum(times)
-    average_chunk_time = "{:.7f}".format(np.average(times))
-    max_chunk_time = "{:.7f}".format(max(times))
-    min_chunk_time = "{:.7f}".format(min(times))
-
-    # average_time_per_chunk = total_time / rounds
-    with open(txt_filename, "r") as f:
-        actual_text = f.read()
-    # print(actual_text)
+        # average_time_per_chunk = total_time / rounds
+        with open(txt_filenames[client_id], "r") as f:
+            actual_texts[client_id] = f.read()
+    # print(actual_texts)
 
             # jiwer.ExpandCommonEnglishContractions(),
             # jiwer.RemoveEmptyStrings(),
@@ -336,7 +368,7 @@ async def process_audio_stress_test(chunks_pkl, txt_filename, params: dict, use_
     results = dict()
     for client_id in range(0, params["num_concurrent_clients"]):
         finaltext = " ".join(transforms(result_dict[client_id]["transcription"])[0])
-        transformed_actual_text = " ".join(transforms(actual_text)[0])
+        transformed_actual_text = " ".join(transforms(actual_texts[client_id])[0])
         # print(f"The actual text is:\n{transformed_actual_text}")
         # print(f'\n\nThe Transcribed text was:\n{finaltext}')
         # wer = jiwer.wer(transformed_actual_text, transcribed_text, truth_transform=transforms, hypothesis_transform=transforms, )
@@ -355,21 +387,21 @@ async def process_audio_stress_test(chunks_pkl, txt_filename, params: dict, use_
         # print(metric_table)
         # print(f"    Average time pr. chunk: {average_time_per_chunk} seconds, chunk size: {chunk_size}")
         results[client_id] = {
-            "Max. chunk time": max_chunk_time,
-            "Min. chunk time": min_chunk_time,
-            "Avg. chunk time": average_chunk_time,
-            "Word Error Rate (WER)": measures[client_id]['wer'] * 100,
-            "Word Information Loss (WIL)": measures[client_id]['wil'] * 100,
-            "Total Transcription time": total_time,
-            "Total GPU VRAM Usage": total_GPU_VRAM_usage,
-            "Total GPU Clock Speed": total_GPU_clock_usage,
-            "Peak GPU VRAM Usage": peak_GPU_VRAM_usage,
-            "Peak GPU Clock Speed": peak_GPU_clock_usage,
-            "Avg. GPU VRAM Usage": avg_GPU_VRAM_usage,
-            "Avg. GPU Clock Speed": avg_GPU_clock_usage,
-            "Total RAM Usage": total_RAM_usage,
-            "Peak RAM Usage": peak_RAM_usage,
-            "Avg. RAM Usage": avg_RAM_usage
+            "Max. chunk time": max_chunk_times_dict[client_id],
+            "Min. chunk time": min_chunk_times_dict[client_id],
+            "Avg. chunk time": average_chunk_times_dict[client_id],
+            "Word Error Rate (WER)": round(measures[client_id]['wer'] * 100, 1),
+            "Word Information Loss (WIL)": round(measures[client_id]['wil'] * 100, 1),
+            "Total Transcription time": total_times_dict[client_id],
+            "Total GPU VRAM Usage": usages_dict[client_id][total_GPU_VRAM_usage],
+            "Total GPU Clock Speed": usages_dict[client_id][total_GPU_clock_usage],
+            "Peak GPU VRAM Usage": usages_dict[client_id][peak_GPU_VRAM_usage],
+            "Peak GPU Clock Speed": usages_dict[client_id][peak_GPU_clock_usage],
+            "Avg. GPU VRAM Usage": usages_dict[client_id][avg_GPU_VRAM_usage],
+            "Avg. GPU Clock Speed": usages_dict[client_id][avg_GPU_clock_usage],
+            "Total RAM Usage": usages_dict[client_id][total_RAM_usage],
+            "Peak RAM Usage": usages_dict[client_id][peak_RAM_usage],
+            "Avg. RAM Usage": usages_dict[client_id][avg_RAM_usage],
         }
 
     return results
