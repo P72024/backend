@@ -1,15 +1,15 @@
 import csv
-from multiprocessing import process
 import os
 import pickle
+import random
 import subprocess
 import sys
+import threading
 import time
 from io import BytesIO
-import random
-
-import threading
+from multiprocessing import process
 from typing import List
+
 import GPUtil
 import jiwer
 import numpy as np
@@ -106,9 +106,9 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
     peak_RAM_usage = 0
     avg_RAM_usage = 0
 
-    for (chunk, isLastOfSpeech) in chunks:
+    for (chunk) in chunks:
         start_total_time = time.time()
-        new_text = asr.process_audio(chunk)
+        new_text = asr.process_audio(chunk, '1')
         if new_text is not None:
             while new_text.endswith('…'):
                 new_text = new_text[:-1]
