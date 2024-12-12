@@ -7,99 +7,92 @@ def calculate_distance(x, y, weight):
         return np.nan
     return np.sqrt(x**2 + y**2 + weight)
 
-def plot_and_find_top_points(results, x, weight, werWilThreshold):
+def plot_and_find_top_points(results, results_client, top_x_num_points, weight, werWilThreshold, take_latency_into_account):
     filtered_results = results[(results['Word Error Rate (WER)'] <= werWilThreshold) & (results['Word Information Loss (WIL)'] <= werWilThreshold)]
     
-    plt.figure(figsize=(10, 5))
-    plt.scatter(filtered_results['Avg. chunk time'], filtered_results['Word Error Rate (WER)'])
-    plt.xlabel('Avg. Chunk Time')
-    plt.ylabel('Word Error Rate (WER)')
-    plt.title('WER vs. Avg. Chunk Time')
-    plt.grid(True)
-    plt.show()
-
-    plt.figure(figsize=(10, 5))
-    plt.scatter(filtered_results['Avg. chunk time'], filtered_results['Word Information Loss (WIL)'])
-    plt.xlabel('Avg. Chunk Time')
-    plt.ylabel('Word Information Loss (WIL)')
-    plt.title('WIL vs. Avg. Chunk Time')
-    plt.grid(True)
-    plt.show()
+    results_client["Filename"] =  "" + results_client["min_chunk_size"].astype(str) + "-" + results_client["speech_threshold"].astype(str) + ".pkl"
     
+    filtered_results = pd.merge(filtered_results, results_client, on='Filename')
+    if take_latency_into_account:
+        filtered_results["total_chunk_time"] = filtered_results["Avg. chunk time"] + (filtered_results["avg_VADFilterTime"] + filtered_results["avg_chunkProcessTime"] + filtered_results["avg_chunkRoundTripTime"])/1000
+    else:
+        filtered_results["total_chunk_time"] = filtered_results["Avg. chunk time"]
+    if take_latency_into_account:
+        # Plot the scatter plot for WER vs. Total Chunk Time
+        plot_scatter(filtered_results, 'total_chunk_time', 'Word Error Rate (WER)', 'Avg. Chunk Time', 'Word Error Rate (WER)', 'WER vs. Total Chunk Time')
+        # Plot the scatter plot for WIL vs. Total Chunk Time
+        plot_scatter(filtered_results, 'total_chunk_time', 'Word Information Loss (WIL)', 'Avg. Chunk Time', 'Word Information Loss (WIL)', 'WIL vs. Total Chunk Time')
+    else:
+        # Plot the scatter plot for WER vs. Avg. Chunk Time
+        plot_scatter(filtered_results, 'Avg. chunk time', 'Word Error Rate (WER)', 'Avg. Chunk Time', 'Word Error Rate (WER)', 'WER vs. Avg. Chunk Time')
+        # Plot the scatter plot for WIL vs. Avg. Chunk Time
+        plot_scatter(filtered_results, 'Avg. chunk time', 'Word Information Loss (WIL)', 'Avg. Chunk Time', 'Word Information Loss (WIL)', 'WIL vs. Avg. Chunk Time')
 
-    filtered_results['distance_wer'] = filtered_results.apply(lambda row: calculate_distance(row['Avg. chunk time'], row['Word Error Rate (WER)'], weight), axis=1)
-    top_wer_points = filtered_results.nsmallest(x, 'distance_wer')
+    filtered_results['distance_wer'] = filtered_results.apply(lambda row: calculate_distance(row['total_chunk_time'], row['Word Error Rate (WER)'], weight), axis=1)
+    top_wer_points = filtered_results.nsmallest(top_x_num_points, 'distance_wer')
 
-    filtered_results['distance_wil'] = filtered_results.apply(lambda row: calculate_distance(row['Avg. chunk time'], row['Word Information Loss (WIL)'], weight), axis=1)
-    top_wil_points = filtered_results.nsmallest(x, 'distance_wil')
+    filtered_results['distance_wil'] = filtered_results.apply(lambda row: calculate_distance(row['total_chunk_time'], row['Word Information Loss (WIL)'], weight), axis=1)
+    top_wil_points = filtered_results.nsmallest(top_x_num_points, 'distance_wil')
 
-    print("filtered_results Head values of 'distance_wil':\n", filtered_results['distance_wil'].sort_values(ascending=False).head())
-    print("filtered_results Tail values of 'distance_wil':\n", filtered_results['distance_wil'].sort_values(ascending=False).tail())
-    print("Top wil: Head values of 'word information loss':\n", top_wil_points['distance_wil'].sort_values(ascending=False).head())
-    print("Top wil: Tail values of 'word information loss':\n", top_wil_points['distance_wil'].sort_values(ascending=False).tail())
-    
     combined_points = pd.merge(top_wer_points, top_wil_points)
-
-    print("combined points: Head values of 'distance_wil':\n", combined_points['distance_wil'].sort_values(ascending=False).head())
-    print("combined points: Tail values of 'distance_wil':\n", combined_points['distance_wil'].sort_values(ascending=False).tail())
-
-    plt.figure(figsize=(10, 5))
-    plt.scatter(combined_points['Word Information Loss (WIL)'], combined_points['Word Error Rate (WER)'])
-    plt.xlabel('Word Information Loss (WIL)')
-    plt.ylabel('Word Error Rate (WER)')
-    plt.title('WER vs. WIL for Combined Points')
-    plt.grid(True)
-    plt.show()
-
+    if take_latency_into_account:
+        plot_scatter(combined_points, 'Word Information Loss (WIL)', 'Word Error Rate (WER)', 'Word Information Loss (WIL)', 'Word Error Rate (WER)', 'WER vs. WIL for Combined Points (Latency Considered)')
+    else:
+        plot_scatter(combined_points, 'Word Information Loss (WIL)', 'Word Error Rate (WER)', 'Word Information Loss (WIL)', 'Word Error Rate (WER)', 'WER vs. WIL for Combined Points (Latency Not Considered)')
+    
     return combined_points
 
-def display_table(df):
-    import tkinter as tk
-    from tkinter import ttk
+def process_and_save_lowest_distance_points(top_combined_points, intervals, output_path):
+    # Save the row with the lowest distance combined for each interval of total_chunk_time
+    lowest_distance_per_interval = pd.DataFrame()
+    for interval in intervals:
+        interval_points = top_combined_points[(top_combined_points['total_chunk_time'] >= interval - 1) & (top_combined_points['total_chunk_time'] < interval)]
+        if not interval_points.empty:
+            lowest_distance_row = interval_points.nsmallest(1, 'distance_combined')
+            lowest_distance_per_interval = pd.concat([lowest_distance_per_interval, lowest_distance_row])
 
-    root = tk.Tk()
-    root.title("Top Combined Points")
+    # Save the results to a CSV file
+    lowest_distance_per_interval.to_csv(output_path, index=False)
 
-    frame = ttk.Frame(root)
-    frame.pack(fill='both', expand=True)
+def distance_total_time_table(top_combined_points, take_latency_into_account):
+    if take_latency_into_account:
+        plot_scatter(top_combined_points, 'total_chunk_time', 'distance_combined', 'Total Chunk Time', 'WER+WIL Distance', 'Total Chunk Time vs. WER+WIL Distance (Latency Considered)')
+    else:
+        plot_scatter(top_combined_points, 'total_chunk_time', 'distance_combined', 'Avg. chunk time', 'WER+WIL Distance', 'Avg. chunk time vs. WER+WIL Distance (Latency Not Considered)')
 
-    tree = ttk.Treeview(frame, columns=list(df.columns), show='headings')
-    tree.pack(fill='both', expand=True)
-    
-    # Add a horizontal scrollbar
-    hsb = ttk.Scrollbar(frame, orient='horizontal', command=tree.xview)
-    hsb.pack(side='bottom', fill='x')
-    tree.configure(xscrollcommand=hsb.set)
+def plot_scatter(df, x_col, y_col, xlabel, ylabel, title):
+    plt.figure(figsize=(10, 5))
+    plt.scatter(df[x_col], df[y_col])
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.grid(True)
+    plt.show()
 
-    for col in df.columns:
-        tree.heading(col, text=col)
-        tree.column(col, anchor='center')
 
-    for index, row in df.iterrows():
-        tree.insert('', 'end', values=list(row))
-
-    root.mainloop()
 
 
 results = pd.read_csv('./results/results.csv')
-results_client = pd.read_csv('./results/results_client.csv')
+results_client = pd.read_csv('./results/results_client_avg.csv')
 
 results['Word Error Rate (WER)'] = results['Word Error Rate (WER)'].str.rstrip('%').astype(float)
 results['Word Information Loss (WIL)'] = results['Word Information Loss (WIL)'].str.rstrip('%').astype(float)
 
 
 # Parameters
-x = 400
+top_x_num_points = 10000
 weight = 1  
-
+max_werWilThreshold = 100.0
+take_latency_into_account = False
 
 # Call the function
-combined_points = plot_and_find_top_points(results, x, weight, 20.0)
+combined_points = plot_and_find_top_points(results, results_client, top_x_num_points, weight, max_werWilThreshold, take_latency_into_account)
 
 combined_points['distance_combined'] = combined_points.apply(lambda row: calculate_distance(row['Word Information Loss (WIL)'], row['Word Error Rate (WER)'], weight), axis=1)
-top_combined_points = combined_points.nsmallest(x, 'distance_combined')
-
+top_combined_points = combined_points.nsmallest(top_x_num_points, 'distance_combined')
 
 top_combined_points.to_csv('./results/top_combined_points.csv', index=False)
-# Display the top x data points in a Tkinter window
-display_table(top_combined_points)
+
+distance_total_time_table(top_combined_points, take_latency_into_account)
+
+process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], './results/lowest_distance_per_interval.csv')
