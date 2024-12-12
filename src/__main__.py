@@ -297,32 +297,6 @@ async def leave_room(room_id, client_id, websocket):
         
         logging.info(f"Rooms: {rooms}")
 
-async def save_chunk(data):
-    # Check if file exists, and initialize it if not
-    if os.path.exists('../benchmarking/testfiles/frederik.pkl'):
-        with open('../benchmarking/testfiles/frederik.pkl', 'rb') as f:
-            array = pickle.load(f)
-    else:
-        array = []
-
-    # Append the new data and save back
-    array.append(data)
-    with open('../benchmarking/testfiles/frederik.pkl', 'wb') as f:
-        pickle.dump(array, f)
-
-async def save_metadata(data):
-    # Check if file exists, and initialize it if not
-    if os.path.exists('../benchmarking/testfiles/frederik_meta.pkl'):
-        with open('../benchmarking/testfiles/frederik_meta.pkl', 'rb') as f:
-            array = pickle.load(f)
-    else:
-        array = []
-
-    # Append the new data and save back
-    array.append(data)
-    with open('../benchmarking/testfiles/frederik_meta.pkl', 'wb') as f:
-        pickle.dump(array, f)# Start WebSocket server
-
 async def main():
     # Start the websocket server
     async with websockets.serve(handler, "0.0.0.0", 3000):
