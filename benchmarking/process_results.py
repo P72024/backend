@@ -87,15 +87,15 @@ def plot_scatter(df, x_col, y_col, xlabel, ylabel, title):
     plt.show()
 
 
-path_backend_woman = './results/Results_woman/raw_data/backend/results_woman.csv'
+path_backend_woman = './results/Results_woman/raw_data/backend/results_avg_woman.csv'
 path_client_woman = './results/Results_woman/raw_data/client/results_client_avg_woman.csv'
-path_backend_man = './results/Results_man/raw_data/backend/results.csv'
+path_backend_man = './results/Results_man/raw_data/backend/results_avg.csv'
 path_client_man = './results/Results_man/raw_data/client/results_client_avg.csv'
 processed_results_woman = './results/Results_woman/processed_results/'
 processed_results_man = './results/Results_man/processed_results/'
-current_path = "man"
-results = pd.read_csv(path_backend_man)
-results_client = pd.read_csv(path_client_man)
+current_path = "woman"
+results = pd.read_csv(path_backend_woman)
+results_client = pd.read_csv(path_client_woman)
 
 if current_path != 'woman':
     results['Word Error Rate (WER)'] = results['Word Error Rate (WER)'].str.rstrip('%').astype(float)
@@ -117,15 +117,15 @@ def run_process_results (with_latency, current_path):
     top_combined_points = combined_points.nsmallest(top_x_num_points, 'distance_combined')
 
     if take_latency_into_account:
-        top_combined_points.to_csv(processed_results_man + 'top_combined_points_with_latency.csv', index=False)
+        top_combined_points.to_csv(processed_results_woman + 'top_combined_points_with_latency.csv', index=False)
     else: 
-        top_combined_points.to_csv(processed_results_man + 'top_combined_points_without_latency.csv', index=False)
+        top_combined_points.to_csv(processed_results_woman + 'top_combined_points_without_latency.csv', index=False)
 
     distance_total_time_table(top_combined_points, take_latency_into_account)
 
     if take_latency_into_account:
-        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_man + 'lowest_distance_per_interval_with_latency.csv', take_latency_into_account)
+        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_woman + 'lowest_distance_per_interval_with_latency.csv', take_latency_into_account)
     else:
-        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_man + 'lowest_distance_per_interval_without_latency.csv', take_latency_into_account)
+        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_woman + 'lowest_distance_per_interval_without_latency.csv', take_latency_into_account)
 
 run_process_results(False, current_path)
