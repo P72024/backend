@@ -26,8 +26,8 @@ folder_avg_path = 'testfiles/eval_files/'
 folder_stress_path = 'testfiles/'
 results_file_path = get_absolute_path("results/results.csv")
 results_avg_file_path = get_absolute_path("results/results_avg.csv")
-stress_test_results_file_path = get_absolute_path("results/stress_test_results.csv")
-stress_test_results_avg_file_path = get_absolute_path("results/stress_test_results_avg.csv")
+stress_test_results_file_path = get_absolute_path("results/Stress_test/raw_data/stress_test_results.csv")
+stress_test_results_avg_file_path = get_absolute_path("results/Stress_test/raw_data/stress_test_results_avg.csv")
 
 
 # Add the src folder_avg to the Python path
@@ -262,6 +262,7 @@ async def run_stress_test(use_gpu: bool, combinations, pkl_files, txt_files):
                 transcription_results = await process_audio_stress_test(pkl_files, txt_files, params, use_gpu)
                 results_array.append(transcription_results)
 
+
                 csv_row = [
                     datetime.today().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                 ]
@@ -271,10 +272,8 @@ async def run_stress_test(use_gpu: bool, combinations, pkl_files, txt_files):
                         csv_row.append("N/A")
                     else:
                         csv_row.append(val)
-                client_results = []
-                for (client_id, val) in transcription_results.items():
-                    client_results.append({ client_id: val })
-                csv_row.append(client_results)
+
+                csv_row.append(transcription_results)
 
                 with open(stress_test_results_file_path, "a", newline='') as f:
                     csv_writer = csv.writer(f)
@@ -288,19 +287,34 @@ async def run_stress_test(use_gpu: bool, combinations, pkl_files, txt_files):
             # Handle numeric values or percentages
             for result in results_array:
                 for client_id, value in result.items():
-                    results[client_id] = {}
-                    averages[client_id] = {}
+                    results[client_id] = {} if client_id not in results else results
+                    averages[client_id] = {} if client_id not in averages else averages
                     for key, values in value.items():
+                        if isinstance(values, str):
+                            if "%" in values:
+                                # Remove the '%' symbol and convert to float
+                                values = float(values.strip('%'))
+                            else:
+                                # Convert to float directly
+                                values = float(values)
+
                         val = values if isinstance(values, (int, float)) else "N/A"
+
+                        # Convert values to float if they are strings (ignore percentage symbols)
                         if key not in averages[client_id]:
                             averages[client_id][key] = [val]
                         else:
                             averages[client_id][key].append(val)
-                            
-            for client_id, value_object in averages.items():
-                for key, value in value_object.items():
+            print("averages: ", averages)
+            for client_id, value_dict in averages.items():
+                print(f"The value_dict looks like this: {value_dict}")
+                for key, value in value_dict.items():
+                    print(value)
+                    print("type of value: ", type(value))
                     if key == "Word Error Rate (WER)" or key == "Word Information Loss (WIL)":
-                        results[client_id][key] = round(sum(value) / num_iterations, 1) if "N/A" not in value else "N/A"
+                        results[client_id][key] = round((sum(value) / num_iterations), 1) if "N/A" not in value else "N/A"
+                    else:
+                        results[client_id][key] = (sum(value) / num_iterations) if "N/A" not in value else "N/A"
                     
             # Print or use the final averaged results
             # print(f"The average result is: {results}")
@@ -315,10 +329,7 @@ async def run_stress_test(use_gpu: bool, combinations, pkl_files, txt_files):
                 else:
                     csv_row.append(val)
 
-            client_averages = []
-            for (client_id, val) in results.items():
-                client_averages.append({ client_id: val })
-            csv_row.append(client_averages)
+            csv_row.append(results)
 
             with open(stress_test_results_avg_file_path, "a", newline='') as f:
                 csv_writer = csv.writer(f)
@@ -336,15 +347,6 @@ def generate_stress_test_combinations(config_path):
     combinations = [dict(zip(keys, combo)) for combo in product(*values)]
     updated_combinations = []
     for combination in combinations:
-        pkl_files = []
-        txt_files = []
-        for file in os.listdir(folder_stress_path):
-            if file.startswith(str(combination["num_concurrent_rooms"])):
-                for pkl_file in os.listdir(folder_stress_path + file):
-                    if pkl_file.endswith('.pkl'):
-                        pkl_files.append(get_absolute_path(os.path.join(folder_stress_path, file, pkl_file)))
-                        txt_files.append(get_absolute_path(os.path.join(folder_stress_path, file, re.sub(".pkl", ".txt", pkl_file))))
-
         if combination["confidence_based"]:
             # Update the original combination with the first confidence limit
             combination["confidence_limit"] = confidence_limits[0]
@@ -359,6 +361,16 @@ def generate_stress_test_combinations(config_path):
             # Keep the combination as is if confidence_based is False
             combination["confidence_limit"] = 0.0
             updated_combinations.append(combination)
+
+    pkl_files = []
+    txt_files = []
+    for file in os.listdir(folder_stress_path):
+        if file.startswith("stress_test"):
+            for pkl_file in os.listdir(folder_stress_path + file):
+                if pkl_file.endswith('.pkl'):
+                    pkl_files.append(get_absolute_path(os.path.join(folder_stress_path, file, pkl_file)))
+                    txt_files.append(get_absolute_path(os.path.join(folder_stress_path, file, re.sub(".pkl", ".txt", pkl_file))))
+
     return updated_combinations, pkl_files, txt_files
 
 async def run_stress_testing(args):

@@ -348,7 +348,7 @@ async def process_audio_stress_test(chunks_pkls, txt_filenames, params: dict, us
         asyncio.create_task(
             simulate_process_audio(result_dict, usages_dict, times_dict, asr, shared_queue, stop_event, queue_times_dict)
         )
-        for _ in range(0, params["num_workers"])
+        # for _ in range(0, params["num_workers"])
     ]
 
     # Wait for all put audio tasks to finish
