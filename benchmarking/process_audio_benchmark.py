@@ -1,6 +1,8 @@
+import asyncio
 import csv
 import os
 import pickle
+import queue
 import random
 import subprocess
 import sys
@@ -19,6 +21,8 @@ from prettytable import PrettyTable
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 from ASR.ASR import ASR
 from ASR.tweaked import ASR_tweaked
+from Util import unix_seconds_to_ms
+
 
 ## GPU VALUES
 total_GPU_VRAM_usage = "total_GPU_VRAM_usage"
@@ -212,34 +216,50 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
 
     return results
 
-def simulate_client(chunks, client_id, result_dict, usages_dict, times_dict, asr_model):
+async def simulate_process_audio(result_dict, usages_dict, times_dict, asr_model, shared_queue: asyncio.Queue, stop_event: asyncio.Event, queue_times_dict: dict):
+    while not stop_event.is_set() or not shared_queue.empty():
+        try:
+            (client_id, chunk, chunk_number) = await shared_queue.get()
+            queue_times_dict[client_id][chunk_number]["taken_out_of_queue"] = time.time()
+            (new_text, transcribe_time, _) = await asyncio.to_thread(asr_model.process_audio, chunk, client_id) # So transcribing doesn't block adding audio to queue. Just like in our application
+            times_dict[client_id].append(transcribe_time)
+            result_dict[client_id]["transcription"] += " " +  new_text
+            result_dict[client_id]["transcribe_time"] = transcribe_time
+
+            ram_usage_chunk, gpu_usage_vram_chunk, gpu_usage_clock_chunk = measure_usage()
+            #VRAM
+            usages_dict[client_id][total_GPU_VRAM_usage] += gpu_usage_vram_chunk
+            if gpu_usage_vram_chunk > usages_dict[client_id][peak_GPU_VRAM_usage]:
+                usages_dict[client_id][peak_GPU_VRAM_usage] = gpu_usage_vram_chunk
+
+            #CLOCKSPEED
+            usages_dict[client_id][total_GPU_clock_usage] += gpu_usage_clock_chunk
+            if gpu_usage_clock_chunk > usages_dict[client_id][peak_GPU_clock_usage]:
+                usages_dict[client_id][peak_GPU_clock_usage] = gpu_usage_clock_chunk
+
+            #RAM
+            usages_dict[client_id][total_RAM_usage] += ram_usage_chunk
+            if ram_usage_chunk > usages_dict[client_id][peak_RAM_usage]:
+                usages_dict[client_id][peak_RAM_usage] = ram_usage_chunk
+        except Exception as e:
+            # import traceback
+            print("Exception caught:", e) # Queue can temporarily be empty
+            # traceback.print_exc()
+
+async def put_audio_into_shared_queue(chunks, client_id, shared_queue: asyncio.Queue, queue_times_dict: dict):
+    chunk_number = 1
+    queue_times_dict[client_id] = dict()
     for (chunk, _) in chunks:
-        (new_text, transcribe_time, _) = asr_model.process_audio(chunk, client_id)
-        times_dict[client_id].append(transcribe_time)
-        result_dict[client_id]["transcription"] += " " +  new_text
-        result_dict[client_id]["transcribe_time"] = transcribe_time
-
-        ram_usage_chunk, gpu_usage_vram_chunk, gpu_usage_clock_chunk = measure_usage()
-        #VRAM
-        usages_dict[client_id][total_GPU_VRAM_usage] += gpu_usage_vram_chunk
-        if gpu_usage_vram_chunk > usages_dict[client_id][peak_GPU_VRAM_usage]:
-            usages_dict[client_id][peak_GPU_VRAM_usage] = gpu_usage_vram_chunk
-
-        #CLOCKSPEED
-        usages_dict[client_id][total_GPU_clock_usage] += gpu_usage_clock_chunk
-        if gpu_usage_clock_chunk > usages_dict[client_id][peak_GPU_clock_usage]:
-            usages_dict[client_id][peak_GPU_clock_usage] = gpu_usage_clock_chunk
-
-        #RAM
-        usages_dict[client_id][total_RAM_usage] += ram_usage_chunk
-        if ram_usage_chunk > usages_dict[client_id][peak_RAM_usage]:
-            usages_dict[client_id][peak_RAM_usage] = ram_usage_chunk
+        queue_times_dict[client_id][chunk_number] = { "inserted": time.time() }
+        await shared_queue.put((client_id, chunk, chunk_number))
+        chunk_number += 1
+        await asyncio.sleep(2) # Simulate chunk processing time on frontend
 
 async def process_audio_stress_test(chunks_pkls, txt_filenames, params: dict, use_gpu: bool):
     # Define required keys and their expected types
     required_keys_with_types = {
         "num_workers": int,
-        "num_concurrent_clients": int,
+        "num_concurrent_rooms": int,
         "model_type": str,
         "beam_size": int,
         "use_context": bool,
@@ -276,8 +296,9 @@ async def process_audio_stress_test(chunks_pkls, txt_filenames, params: dict, us
     chunks_dict = dict()
     times_dict = dict()
     usages_dict = dict()
+    queue_times_dict = dict()
 
-    for client_id in range(0, params["num_concurrent_clients"]):
+    for client_id in range(0, params["num_concurrent_rooms"]):
         result_dict[client_id] = { 
             "transcription": "",
             "transcribe_time": 0,
@@ -313,18 +334,32 @@ async def process_audio_stress_test(chunks_pkls, txt_filenames, params: dict, us
         usages_dict[client_id][peak_RAM_usage] = 0
         usages_dict[client_id][avg_RAM_usage] = 0
 
-    client_threads: List[threading.Thread] = []
-    for client_id in range(0, params["num_concurrent_clients"]):  # Simulating clients
-        client_thread = threading.Thread(
-            target=simulate_client, args=(chunks_dict[client_id], client_id, result_dict, usages_dict, times_dict, asr)
-        )
-        client_threads.append(client_thread)
-        client_thread.start()
-    
-    for client_thread in client_threads:
-        client_thread.join()
+    shared_queue = asyncio.Queue()
+    stop_event = asyncio.Event()
 
-    for client_id in range(0, params["num_concurrent_clients"]):
+    put_audio_tasks = [
+        asyncio.create_task(
+            put_audio_into_shared_queue(chunks_dict[client_id], client_id, shared_queue, queue_times_dict)
+        )
+        for client_id in range(0, params["num_concurrent_rooms"])
+    ]
+
+    simulate_process_audio_tasks = [
+        asyncio.create_task(
+            simulate_process_audio(result_dict, usages_dict, times_dict, asr, shared_queue, stop_event, queue_times_dict)
+        )
+        for _ in range(0, params["num_workers"])
+    ]
+
+    # Wait for all put audio tasks to finish
+    await asyncio.gather(*put_audio_tasks)
+
+    # Signal the stop event to tell clients to stop processing
+    stop_event.set()
+
+    await asyncio.gather(*simulate_process_audio_tasks)
+
+    for client_id in range(0, params["num_concurrent_rooms"]):
         usages_dict[client_id][avg_GPU_VRAM_usage] = usages_dict[client_id][total_GPU_VRAM_usage] / len(chunks_pkls[client_id])
         usages_dict[client_id][avg_GPU_clock_usage] = usages_dict[client_id][total_GPU_clock_usage] / len(chunks_pkls[client_id])
         usages_dict[client_id][avg_RAM_usage] = usages_dict[client_id][total_RAM_usage] / len(chunks_pkls[client_id])
@@ -333,13 +368,29 @@ async def process_audio_stress_test(chunks_pkls, txt_filenames, params: dict, us
     average_chunk_times_dict = dict()
     max_chunk_times_dict = dict()
     min_chunk_times_dict = dict()
-    actual_texts = dict()
 
-    for client_id in range(0, params["num_concurrent_clients"]):
+    queue_times_list_dict = dict()
+    average_queue_times_dict = dict()
+    max_queue_times_dict = dict()
+    min_queue_times_dict = dict()
+
+    actual_texts = dict()
+    
+    for client_id in range(0, params["num_concurrent_rooms"]):
         total_times_dict[client_id] = sum(times_dict[client_id])
         average_chunk_times_dict[client_id] = "{:.7f}".format(np.average(times_dict[client_id]))
         max_chunk_times_dict[client_id] = "{:.7f}".format(max(times_dict[client_id]))
         min_chunk_times_dict[client_id] = "{:.7f}".format(min(times_dict[client_id]))
+
+        for (_, timers) in queue_times_dict[client_id].items():
+            if client_id not in queue_times_list_dict:
+                queue_times_list_dict[client_id] = [unix_seconds_to_ms(timers["taken_out_of_queue"] - timers["inserted"])]
+            else:
+                queue_times_list_dict[client_id].append(unix_seconds_to_ms(timers["taken_out_of_queue"] - timers["inserted"]))
+
+        average_queue_times_dict[client_id] = "{:.7f}".format(np.average(queue_times_list_dict[client_id]))
+        max_queue_times_dict[client_id] = "{:.7f}".format(max(queue_times_list_dict[client_id]))
+        min_queue_times_dict[client_id] = "{:.7f}".format(min(queue_times_list_dict[client_id]))
 
         # average_time_per_chunk = total_time / rounds
         with open(txt_filenames[client_id], "r") as f:
@@ -366,7 +417,7 @@ async def process_audio_stress_test(chunks_pkls, txt_filenames, params: dict, us
     # print(transforms(transcribed_text))
     measures = dict()
     results = dict()
-    for client_id in range(0, params["num_concurrent_clients"]):
+    for client_id in range(0, params["num_concurrent_rooms"]):
         finaltext = " ".join(transforms(result_dict[client_id]["transcription"])[0])
         transformed_actual_text = " ".join(transforms(actual_texts[client_id])[0])
         # print(f"The actual text is:\n{transformed_actual_text}")
@@ -390,6 +441,9 @@ async def process_audio_stress_test(chunks_pkls, txt_filenames, params: dict, us
             "Max. chunk time": max_chunk_times_dict[client_id],
             "Min. chunk time": min_chunk_times_dict[client_id],
             "Avg. chunk time": average_chunk_times_dict[client_id],
+            "Max. queue time": max_queue_times_dict[client_id],
+            "Min. queue time": min_queue_times_dict[client_id],
+            "Avg. queue time": average_queue_times_dict[client_id],
             "Word Error Rate (WER)": round(measures[client_id]['wer'] * 100, 1),
             "Word Information Loss (WIL)": round(measures[client_id]['wil'] * 100, 1),
             "Total Transcription time": total_times_dict[client_id],

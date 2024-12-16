@@ -46,7 +46,7 @@ config_file_path = get_absolute_path("config.yaml")
 
 # Final updated combinations
         
-num_iterations = 2
+num_iterations = 3
 
 
 async def run_benchmarks(use_gpu : bool, combinations, files):
@@ -291,7 +291,6 @@ async def run_stress_test(use_gpu: bool, combinations, pkl_files, txt_files):
                     results[client_id] = {}
                     averages[client_id] = {}
                     for key, values in value.items():
-                        print(type(values))
                         val = values if isinstance(values, (int, float)) else "N/A"
                         if key not in averages[client_id]:
                             averages[client_id][key] = [val]
@@ -300,7 +299,8 @@ async def run_stress_test(use_gpu: bool, combinations, pkl_files, txt_files):
                             
             for client_id, value_object in averages.items():
                 for key, value in value_object.items():
-                    results[client_id][key] = sum(value) / num_iterations if "N/A" not in value else "N/A"
+                    if key == "Word Error Rate (WER)" or key == "Word Information Loss (WIL)":
+                        results[client_id][key] = round(sum(value) / num_iterations, 1) if "N/A" not in value else "N/A"
                     
             # Print or use the final averaged results
             # print(f"The average result is: {results}")
@@ -339,7 +339,7 @@ def generate_stress_test_combinations(config_path):
         pkl_files = []
         txt_files = []
         for file in os.listdir(folder_stress_path):
-            if file.startswith(str(combination["num_concurrent_clients"])):
+            if file.startswith(str(combination["num_concurrent_rooms"])):
                 for pkl_file in os.listdir(folder_stress_path + file):
                     if pkl_file.endswith('.pkl'):
                         pkl_files.append(get_absolute_path(os.path.join(folder_stress_path, file, pkl_file)))
@@ -369,7 +369,7 @@ async def run_stress_testing(args):
         "use_context",
         "confidence_based",
         "num_workers",
-        "num_concurrent_clients",
+        "num_concurrent_rooms",
         "confidence_limit",
         "client_results"
     ]
