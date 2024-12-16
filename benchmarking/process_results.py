@@ -90,11 +90,12 @@ def process_and_save_lowest_distance_points(top_combined_points, intervals, outp
 
 
     # Setting x-axis limit
-    plt.xlim(0, 8)
+    plt.xlim(0, 6)
+    plt.ylim(0, 60)
 
     # Adding labels and title
     plt.title("Total Chunk Time and Combined Error Magnitude (CEM)")
-    plt.xlabel("Total Chunk Time")
+    plt.xlabel("Total Chunk Time (s)")
     plt.ylabel("Combined Error Magnitude (CEM)")
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.legend()
@@ -176,10 +177,10 @@ path_backend_man = './results/Results_man/raw_data/backend/results_avg.csv'
 path_client_man = './results/Results_man/raw_data/client/results_client_avg.csv'
 processed_results_woman = './results/Results_woman/processed_results/'
 processed_results_man = './results/Results_man/processed_results/'
-current_path = "woman"
+current_path = "man"
 
-results = pd.read_csv(path_backend_woman)
-results_client = pd.read_csv(path_client_woman)
+results = pd.read_csv(path_backend_man)
+results_client = pd.read_csv(path_client_man)
 
 if current_path != 'woman':
     results['Word Error Rate (WER)'] = results['Word Error Rate (WER)'].str.rstrip('%').astype(float)
@@ -206,14 +207,14 @@ def run_process_results (with_latency, current_path):
     plot_error_bars(top_combined_points, 'confidence_based', 'total_chunk_time', 'model_type', 'Confidence based', 'Total chunk time', 'Latency vs. Confidence based')
 
     if take_latency_into_account:
-        top_combined_points.to_csv(processed_results_woman + 'top_combined_points_with_latency.csv', index=False)
+        top_combined_points.to_csv(processed_results_man + 'top_combined_points_with_latency.csv', index=False)
     else: 
-        top_combined_points.to_csv(processed_results_woman + 'top_combined_points_without_latency.csv', index=False)
+        top_combined_points.to_csv(processed_results_man + 'top_combined_points_without_latency.csv', index=False)
 
     distance_total_time_table(top_combined_points, take_latency_into_account)
 
     if take_latency_into_account:
-        process_and_save_lowest_distance_points(top_combined_points, [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5, 5.5, 6, 6.5, 7, 7.5, 8], processed_results_man + 'test.csv', take_latency_into_account)
+        process_and_save_lowest_distance_points(top_combined_points, [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5, 5.5, 6, 6.5, 7, 7.5, 8], processed_results_man + 'testo.csv', take_latency_into_account)
     else:
         process_and_save_lowest_distance_points(top_combined_points, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_man + 'lowest_distance_per_interval_without_latency.csv', take_latency_into_account)
 
