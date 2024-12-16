@@ -320,7 +320,7 @@ async def run_stress_test(use_gpu: bool, combinations, pkl_files, txt_files):
                 client_averages.append({ client_id: val })
             csv_row.append(client_averages)
 
-            with open(results_avg_file_path, "a", newline='') as f:
+            with open(stress_test_results_avg_file_path, "a", newline='') as f:
                 csv_writer = csv.writer(f)
                 csv_writer.writerow(csv_row)
             
