@@ -37,10 +37,16 @@ stress_test:
         - False
       num_workers:
         - 1
-        - 4
-      num_concurrent_clients:
         - 2
-        - 3
+        - 4
+        - 8
+        - 16
+      num_concurrent_rooms:
+        - 2
+        - 4
+        - 8
+        - 16
+        - 32
     confidence:
       confidence_limit: 
         - 0.8
