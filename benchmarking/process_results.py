@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import math
 def calculate_distance(x, y, weight):
     if pd.isna(x) or pd.isna(y):
         print(f"Debug: Invalid values encountered. Avg. chunk time: {x}, WIL/WER: {y}")
@@ -65,17 +66,40 @@ def plot_and_find_top_points(results, results_client, top_x_num_points, weight, 
 def process_and_save_lowest_distance_points(top_combined_points, intervals, output_path, take_latency_into_account):
     # Save the row with the lowest distance combined for each interval of total_chunk_time
     lowest_distance_per_interval = pd.DataFrame()
-    for interval in intervals:
-        if take_latency_into_account:
-            interval_points = top_combined_points[(top_combined_points['total_chunk_time'] >= interval - 1) & (top_combined_points['total_chunk_time'] < interval)]
-        else:
-            interval_points = top_combined_points[(top_combined_points['Avg. chunk time'] >= interval - 1) & (top_combined_points['Avg. chunk time'] < interval)]
-        if not interval_points.empty:
-            lowest_distance_row = interval_points.nsmallest(1, 'distance_combined')
-            lowest_distance_per_interval = pd.concat([lowest_distance_per_interval, lowest_distance_row])
 
-    # Save the results to a CSV file
-    lowest_distance_per_interval.to_csv(output_path, index=False)
+    df = top_combined_points.nsmallest(10000, "total_chunk_time")
+
+    min_dist_y = math.inf
+    new_df = pd.DataFrame()
+
+    for _, frame in df.iterrows():
+        y = frame['distance_combined']
+        if y < min_dist_y:
+            min_dist_y = y
+            new_df = pd.concat([new_df, pd.DataFrame([frame])], ignore_index=True)
+            
+
+
+    new_df.to_csv(output_path, index=False)
+
+    plt.figure(figsize=(12, 6))
+
+    # Scatter plot and trend line
+    plt.scatter(new_df["total_chunk_time"], new_df["distance_combined"], label="Configuration")
+    plt.plot(new_df["total_chunk_time"], new_df["distance_combined"], alpha=0.7, label="Trend Line")
+
+
+    # Setting x-axis limit
+    plt.xlim(0, 8)
+
+    # Adding labels and title
+    plt.title("Total Chunk Time and Combined Error Magnitude (CEM)")
+    plt.xlabel("Total Chunk Time")
+    plt.ylabel("Combined Error Magnitude (CEM)")
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.legend()
+    plt.show()
+
 
 def distance_total_time_table(top_combined_points, take_latency_into_account):
     if take_latency_into_account:
@@ -189,8 +213,8 @@ def run_process_results (with_latency, current_path):
     distance_total_time_table(top_combined_points, take_latency_into_account)
 
     if take_latency_into_account:
-        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_woman + 'lowest_distance_per_interval_with_latency.csv', take_latency_into_account)
+        process_and_save_lowest_distance_points(top_combined_points, [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5, 5.5, 6, 6.5, 7, 7.5, 8], processed_results_man + 'test.csv', take_latency_into_account)
     else:
-        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_woman + 'lowest_distance_per_interval_without_latency.csv', take_latency_into_account)
+        process_and_save_lowest_distance_points(top_combined_points, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_man + 'lowest_distance_per_interval_without_latency.csv', take_latency_into_account)
 
 run_process_results(True, current_path)
