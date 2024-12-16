@@ -67,9 +67,10 @@ def process_and_save_lowest_distance_points(top_combined_points, intervals, outp
     lowest_distance_per_interval = pd.DataFrame()
     for interval in intervals:
         if take_latency_into_account:
-            interval_points = top_combined_points[(top_combined_points['total_chunk_time'] >= interval - 1) & (top_combined_points['total_chunk_time'] < interval)]
+            interval_points = top_combined_points[(top_combined_points['total_chunk_time'] >= 0) & (top_combined_points['total_chunk_time'] <= interval)]
         else:
-            interval_points = top_combined_points[(top_combined_points['Avg. chunk time'] >= interval - 1) & (top_combined_points['Avg. chunk time'] < interval)]
+            interval_points = top_combined_points[(top_combined_points['Avg. chunk time'] >= 0) & (top_combined_points['Avg. chunk time'] <= interval)]
+
         if not interval_points.empty:
             lowest_distance_row = interval_points.nsmallest(1, 'distance_combined')
             lowest_distance_per_interval = pd.concat([lowest_distance_per_interval, lowest_distance_row])
@@ -186,8 +187,8 @@ def run_process_results (with_latency, current_path):
     distance_total_time_table(top_combined_points, take_latency_into_account)
 
     if take_latency_into_account:
-        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_man + 'lowest_distance_per_interval_with_latency.csv', take_latency_into_account)
+        process_and_save_lowest_distance_points(top_combined_points, [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5, 5.5, 6, 6.5, 7, 20], processed_results_man + 'lowest_distance_per_interval_with_latency.csv', take_latency_into_account)
     else:
-        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_man + 'lowest_distance_per_interval_without_latency.csv', take_latency_into_account)
+        process_and_save_lowest_distance_points(top_combined_points, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_man + 'lowest_distance_per_interval_without_latency.csv', take_latency_into_account)
 
 run_process_results(True, current_path)
