@@ -89,13 +89,14 @@ def extract_chunk_size(filename):
 
 def plot_error_bars(df, x_col, y_col, model_col, xlabel, ylabel, title):
     # Extract chunk size from Filename
-    df['min_chunk_size'] = df['Filename'].apply(extract_chunk_size)
+    if x_col == 'min_chunk_size':
+        df[x_col] = df['Filename'].apply(extract_chunk_size)
     
     # Group by chunk size and model, then calculate statistics
-    stats = df.groupby(['min_chunk_size', model_col])[y_col].agg(['mean', 'std', 'min', 'max']).reset_index()
+    stats = df.groupby([x_col, model_col])[y_col].agg(['mean', 'std', 'min', 'max']).reset_index()
     
     # Prepare data for categorical plotting
-    chunk_sizes = sorted(df['min_chunk_size'].unique())
+    chunk_sizes = sorted(df[x_col].unique())
     models = stats[model_col].unique()
     model_colors = plt.cm.tab10(np.linspace(0, 1, len(models)))
     
@@ -151,10 +152,10 @@ path_backend_man = './results/Results_man/raw_data/backend/results_avg.csv'
 path_client_man = './results/Results_man/raw_data/client/results_client_avg.csv'
 processed_results_woman = './results/Results_woman/processed_results/'
 processed_results_man = './results/Results_man/processed_results/'
-current_path = "man"
+current_path = "woman"
 
-results = pd.read_csv(path_backend_man)
-results_client = pd.read_csv(path_client_man)
+results = pd.read_csv(path_backend_woman)
+results_client = pd.read_csv(path_client_woman)
 
 if current_path != 'woman':
     results['Word Error Rate (WER)'] = results['Word Error Rate (WER)'].str.rstrip('%').astype(float)
@@ -177,17 +178,19 @@ def run_process_results (with_latency, current_path):
     
     plot_error_bars(top_combined_points, 'min_chunk_size', 'distance_combined', 'model_type', 'Min chunk Size', 'WER + WIL Distance', 'Combined distance vs. Chunk Size')
     plot_error_bars(top_combined_points, 'min_chunk_size', 'total_chunk_time','model_type', 'Min chunk Size', 'Total chunk time', 'Latency vs. Chunk Size')
-    
+    plot_error_bars(top_combined_points, 'confidence_based', 'distance_combined', 'model_type', 'Confidence based', 'WER + WIL Distance', 'Combined distance vs. Confidence based')
+    plot_error_bars(top_combined_points, 'confidence_based', 'total_chunk_time', 'model_type', 'Confidence based', 'Total chunk time', 'Latency vs. Confidence based')
+
     if take_latency_into_account:
-        top_combined_points.to_csv(processed_results_man + 'top_combined_points_with_latency.csv', index=False)
+        top_combined_points.to_csv(processed_results_woman + 'top_combined_points_with_latency.csv', index=False)
     else: 
-        top_combined_points.to_csv(processed_results_man + 'top_combined_points_without_latency.csv', index=False)
+        top_combined_points.to_csv(processed_results_woman + 'top_combined_points_without_latency.csv', index=False)
 
     distance_total_time_table(top_combined_points, take_latency_into_account)
 
     if take_latency_into_account:
-        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_man + 'lowest_distance_per_interval_with_latency.csv', take_latency_into_account)
+        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_woman + 'lowest_distance_per_interval_with_latency.csv', take_latency_into_account)
     else:
-        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_man + 'lowest_distance_per_interval_without_latency.csv', take_latency_into_account)
+        process_and_save_lowest_distance_points(top_combined_points, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results_woman + 'lowest_distance_per_interval_without_latency.csv', take_latency_into_account)
 
 run_process_results(True, current_path)
