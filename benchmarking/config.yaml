@@ -30,11 +30,11 @@ stress_test:
       model_type: 
         - "distil-medium.en"
       beam_size: 
-        - 7
+        - 3
       use_context: 
         - False
       confidence_based:
-        - False
+        - True
       num_workers:
         - 1
         - 2
@@ -49,7 +49,7 @@ stress_test:
         - 32
     confidence:
       confidence_limit: 
-        - 0.8
+        - 0.6
     
 
 experiment_setup:
