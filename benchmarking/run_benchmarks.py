@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import csv
+import json
 import os
 import re
 import sys
@@ -287,8 +288,8 @@ async def run_stress_test(use_gpu: bool, combinations, pkl_files, txt_files):
             # Handle numeric values or percentages
             for result in results_array:
                 for client_id, value in result.items():
-                    results[client_id] = {} if client_id not in results else results
-                    averages[client_id] = {} if client_id not in averages else averages
+                    results[client_id] = {} if client_id not in results else results[client_id]
+                    averages[client_id] = {} if client_id not in averages else averages[client_id]
                     for key, values in value.items():
                         if isinstance(values, str):
                             if "%" in values:
@@ -305,6 +306,7 @@ async def run_stress_test(use_gpu: bool, combinations, pkl_files, txt_files):
                             averages[client_id][key] = [val]
                         else:
                             averages[client_id][key].append(val)
+
             print("averages: ", averages)
             for client_id, value_dict in averages.items():
                 print(f"The value_dict looks like this: {value_dict}")
