@@ -219,7 +219,7 @@ async def process_audio_benchmark(chunks_pkl, txt_filename, params : dict, use_g
 async def simulate_process_audio(result_dict, usages_dict, times_dict, asr_model, shared_queue: asyncio.Queue, stop_event: asyncio.Event, queue_times_dict: dict):
     while not stop_event.is_set() or not shared_queue.empty():
         try:
-            (client_id, chunk, chunk_number) = await shared_queue.get()
+            (client_id, chunk, chunk_number) = await asyncio.wait_for(shared_queue.get(), timeout=5)
             queue_times_dict[client_id][chunk_number]["taken_out_of_queue"] = time.time()
             (new_text, transcribe_time, _) = await asyncio.to_thread(asr_model.process_audio, chunk, client_id) # So transcribing doesn't block adding audio to queue. Just like in our application
             times_dict[client_id].append(transcribe_time)
@@ -241,19 +241,17 @@ async def simulate_process_audio(result_dict, usages_dict, times_dict, asr_model
             usages_dict[client_id][total_RAM_usage] += ram_usage_chunk
             if ram_usage_chunk > usages_dict[client_id][peak_RAM_usage]:
                 usages_dict[client_id][peak_RAM_usage] = ram_usage_chunk
-        except Exception as e:
+        except:
+            pass
             # import traceback
-            print("Exception caught:", e) # Queue can temporarily be empty
             # traceback.print_exc()
 
 async def put_audio_into_shared_queue(chunks, client_id, shared_queue: asyncio.Queue, queue_times_dict: dict):
-    chunk_number = 1
     queue_times_dict[client_id] = dict()
-    for (chunk, _) in chunks:
-        queue_times_dict[client_id][chunk_number] = { "inserted": time.time() }
-        await shared_queue.put((client_id, chunk, chunk_number))
-        chunk_number += 1
-        await asyncio.sleep(2) # Simulate chunk processing time on frontend
+    for idx, (chunk, _) in enumerate(chunks):
+        queue_times_dict[client_id][idx] = { "inserted": time.time() }
+        await shared_queue.put((client_id, chunk, idx))
+        await asyncio.sleep(2.4) # Give control back to asyncio loop
 
 async def process_audio_stress_test(chunks_pkls, txt_filenames, params: dict, use_gpu: bool):
     # Define required keys and their expected types
