@@ -32,7 +32,7 @@ def run_process_stress_results(results):
             min_queue_time_dict[index].append(float(value["Min. queue time"]) / 1000)
             avg_queue_time_dict[index].append(float(value["Avg. queue time"]) / 1000)
     
-    for index, row in df.iterrows():
+    for index, row in df_specific_num_of_rooms.iterrows():
         avg_queue_time_with_rooms_dict[index] = []
         for client_id, value in row["client_results"].items():
             avg_queue_time_with_rooms_dict[index].append(float(value["Max. queue time"]) / 1000)
