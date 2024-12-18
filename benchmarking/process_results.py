@@ -62,6 +62,96 @@ def plot_and_find_top_points(results, results_client, top_x_num_points, weight, 
         plot_scatter(combined_points, 'Word Information Loss (WIL)', 'Word Error Rate (WER)', 'Word Information Loss (WIL)', 'Word Error Rate (WER)', 'WER vs. WIL for Combined Points (Latency Not Considered)')
     
     return combined_points
+def plot_timeline_from_csv(file_path):
+    """
+    Reads a CSV file with average time columns, filters rows where 'should_plot' is True,
+    adds artificial spacing for small and large values, and creates a timeline graph 
+    with percentages, parameter names (aligned with the requested labels), tilted text,
+    and removes the box while enumerating plots as titles.
+    
+    :param file_path: Path to the CSV file
+    """
+    # Load data
+    df = pd.read_csv(file_path)
+
+    # Define parameter names and column mappings
+    param_names = ['VAD Filter', 'Chunk Processing', 'Send', 'Model', 'Receive']
+    columns = [
+        'avg_VADFilterTime', 
+        'avg_chunkProcessTime', 
+        'avg_frontendToBackendSendTime', 
+        'Avg. chunk time', 
+        'avg_backendToFrontendSendTime'
+    ]
+
+    # Verify that the required columns exist
+    required_columns = columns + ['should_plot']
+    for col in required_columns:
+        if col not in df.columns:
+            raise ValueError(f"Missing column: {col} in CSV file")
+
+    # Filter rows where 'should_plot' is True
+    filtered_df = df[df['should_plot'] == True]
+
+    # If no rows meet the criteria, exit the function
+    if filtered_df.empty:
+        print("No rows with 'should_plot == True'. Nothing to plot.")
+        return
+
+    # Loop through each valid row and create a timeline plot
+    for idx, (_, row) in enumerate(filtered_df.iterrows(), start=1):
+        # Prepare the times and convert 'Avg. chunk time' (seconds) to milliseconds
+        times = [
+            row['avg_VADFilterTime'],
+            row['avg_chunkProcessTime'],
+            row['avg_frontendToBackendSendTime'],
+            row['Avg. chunk time'] * 1000,  # Convert to milliseconds
+            row['avg_backendToFrontendSendTime']
+        ]
+        total_time = sum(times)
+
+        # Calculate percentages and artificially scaled positions
+        percentages = [t / total_time * 100 for t in times]
+        artificial_spacing = np.cumsum([0] + [np.log10(t + 1) * 10 for t in times])  # Add artificial spacing
+
+        # Generate timeline plot
+        plt.figure(figsize=(12, 4))
+        plt.hlines(1, 0, artificial_spacing[-1], color="black", linewidth=2)  # Main timeline
+
+        # Plot vertical ticks, percentages, and parameter names
+        for i in range(len(param_names)):
+            start = artificial_spacing[i]
+            end = artificial_spacing[i + 1]
+
+            # Draw vertical ticks
+            plt.vlines(start, 0.95, 1.05, color="black")
+            if i == len(param_names) - 1:  # Final vertical line
+                plt.vlines(end, 0.95, 1.05, color="black")
+
+            # Add cumulative time labels (tilted below the NEXT tick)
+            if i < len(param_names):  # Avoid indexing beyond the last
+                plt.text(end, 0.88, f"{int(np.cumsum(times)[i])} ms", 
+                         ha="center", va="top", fontsize=9, color="blue", rotation=45)
+
+            # Add percentages and parameter names between ticks
+            mid_point = (start + end) / 2
+            # Format percentage display: <0.01% for very small values
+            percentage_text = f"<0.1%" if percentages[i] < 0.1 else f"{percentages[i]:.1f}%"
+            plt.text(mid_point, 1.05, f"{param_names[i]}\n{percentage_text}", 
+                    ha="center", va="bottom", fontsize=9, color="green", rotation=45)
+
+        # Enumerated title instead of names
+        plt.title(f"Configuration {idx}")
+
+        # Remove the box around the plot
+        for spine in plt.gca().spines.values():
+            spine.set_visible(False)
+
+        # Clean up the plot
+        plt.yticks([])  # Remove y-axis ticks
+        plt.xticks([])  # Remove x-axis ticks
+        plt.tight_layout()
+        plt.show()
 
 def process_and_save_lowest_distance_points(top_combined_points, intervals, output_path, take_latency_into_account):
     # Save the row with the lowest distance combined for each interval of total_chunk_time
@@ -226,7 +316,8 @@ if current_path != 'woman':
 
 
 def run_process_results (with_latency, current_path):
-    plot_chunk_time('./results/Results_man/processed_results/testo.csv')
+    # plot_chunk_time('./results/Results_man/processed_results/testo.csv')
+    plot_timeline_from_csv('./results/Results_man/processed_results/testo.csv')
     # # Parameters
     # top_x_num_points = 10000
     # weight = 1
