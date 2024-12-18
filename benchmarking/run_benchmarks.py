@@ -307,12 +307,8 @@ async def run_stress_test(use_gpu: bool, combinations, pkl_files, txt_files):
                         else:
                             averages[client_id][key].append(val)
 
-            print("averages: ", averages)
             for client_id, value_dict in averages.items():
-                print(f"The value_dict looks like this: {value_dict}")
                 for key, value in value_dict.items():
-                    print(value)
-                    print("type of value: ", type(value))
                     if key == "Word Error Rate (WER)" or key == "Word Information Loss (WIL)":
                         results[client_id][key] = round((sum(value) / num_iterations), 1) if "N/A" not in value else "N/A"
                     else:
@@ -406,8 +402,8 @@ async def run_stress_testing(args):
     combinations, pkl_files, txt_files = generate_stress_test_combinations(config_file_path)
     print(f"Using GPU: {use_gpu}")
     files = []
-    # for file in os.listdir(folder_avg_path):
     #     if file.endswith('.pkl'):
+    # for file in os.listdir(folder_avg_path):
     #         files.append((file, folder_avg_path + file))
     # Example of conditional usage based on use_gpu
     if use_gpu:
