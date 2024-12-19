@@ -233,39 +233,51 @@ def process_and_save_lowest_distance_points(top_combined_points, intervals, outp
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def plot_chunk_time(csv_file):
-    # Read the CSV file into a DataFrame
-    df = pd.read_csv(csv_file)
+def plot_chunk_time(optimal_csv_file, additional_csv_file):
+    # Read the CSV files into DataFrames
+    optimal_df = pd.read_csv(optimal_csv_file)
+    additional_df = pd.read_csv(additional_csv_file)
 
-    # Ensure necessary columns exist in the DataFrame
+    # Ensure necessary columns exist in the optimal DataFrame
     required_columns = ["total_chunk_time", "distance_combined", "should_plot"]
-    if not all(col in df.columns for col in required_columns):
-        print("Error: CSV file must contain 'total_chunk_time', 'distance_combined', and 'should_plot' columns.")
+    if not all(col in optimal_df.columns for col in required_columns):
+        print("Error: Optimal CSV file must contain 'total_chunk_time', 'distance_combined', and 'should_plot' columns.")
+        return
+
+    # Ensure necessary columns exist in the additional DataFrame
+    if not all(col in additional_df for col in ["total_chunk_time", "distance_combined"]):
+        print("Error: Additional CSV file must contain 'total_chunk_time' and 'distance_combined' columns.")
         return
 
     # Prepare data for plotting
-    x = df["total_chunk_time"]
-    y = df["distance_combined"]
-    colors = df["should_plot"].apply(lambda plot: 'cyan' if plot else 'black')
+    optimal_x = optimal_df["total_chunk_time"]
+    optimal_y = optimal_df["distance_combined"]
+    optimal_colors = optimal_df["should_plot"].apply(lambda plot: 'cyan' if plot else 'black')
+
+    additional_x = additional_df["total_chunk_time"]
+    additional_y = additional_df["distance_combined"]
 
     # Create the figure
     plt.figure(figsize=(12, 6))
 
+    # Plot the additional datapoints in gray with smaller size and more transparency
+    plt.scatter(additional_x, additional_y, c='gray', s=13, alpha=0.25, label="Other Configurations")
+
     # Plot the black points (optimal configurations)
-    black_points = df[~df["should_plot"]]
-    plt.scatter(black_points["total_chunk_time"], black_points["distance_combined"], c='black', label="Optimal Configuration")
+    black_points = optimal_df[~optimal_df["should_plot"]]
+    plt.scatter(black_points["total_chunk_time"], black_points["distance_combined"], c='black', s=50, label="Optimal Configuration")
 
     # Plot the cyan points (chosen optimal configuration)
-    cyan_points = df[df["should_plot"]]
-    plt.scatter(cyan_points["total_chunk_time"], cyan_points["distance_combined"], c='cyan', label="Chosen Optimal Configuration")
+    cyan_points = optimal_df[optimal_df["should_plot"]]
+    plt.scatter(cyan_points["total_chunk_time"], cyan_points["distance_combined"], c='cyan', s=50, label="Chosen Optimal Configuration")
 
-    # Trend line (assuming x and y are already sorted or need sorting for the plot)
-    sorted_indices = x.argsort()
-    plt.plot(x.iloc[sorted_indices], y.iloc[sorted_indices], alpha=0.7, label="Trend Line")
+    # Trend line for optimal configurations
+    sorted_indices = optimal_x.argsort()
+    plt.plot(optimal_x.iloc[sorted_indices], optimal_y.iloc[sorted_indices], alpha=0.7, label="Trend Line")
 
     # Setting axis limits
-    plt.xlim(0, 6)
-    plt.ylim(0, 85)
+    plt.xlim(0, 5.7)
+    plt.ylim(0, 200)
 
     # Adding labels and title
     plt.title("Total Chunk Time and Combined Error Magnitude (CEM) for Optimal Model Configurations")
@@ -276,7 +288,6 @@ def plot_chunk_time(csv_file):
 
     # Show the plot
     plt.show()
-
 
 def distance_total_time_table(top_combined_points, take_latency_into_account):
     if take_latency_into_account:
@@ -355,6 +366,7 @@ def plot_scatter(df, x_col, y_col, xlabel, ylabel, title):
 def run_process_results (with_latency, current_path):
     # plot_chunk_time(processed_results + 'testo.csv')
     # plot_timeline_from_csv(processed_results + 'testo.csv')
+    plot_chunk_time('./results/Results_man/processed_results/testo.csv', './results/Results_man/processed_results/top_combined_points_with_latency.csv')
     # # Parameters
     top_x_num_points = 10000
     weight = 1
