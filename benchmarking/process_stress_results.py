@@ -1,8 +1,19 @@
 import json
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
 import pandas as pd
 import numpy as np
 import ast
+
+rcParams.update({
+    'font.size': 20,              
+    'axes.titlesize': 22,
+    'axes.labelsize': 21,
+    'xtick.labelsize': 13,
+    'ytick.labelsize': 13,
+    'legend.fontsize': 12,
+    'font.family': 'serif',
+})
 
 def plot_concurrent_rooms(df, x_col, y_col, xlabel, ylabel, title, file_path):
     coefficients = np.polyfit(df[x_col], df[y_col], 2)
@@ -21,11 +32,11 @@ def plot(x, y, xlabel, ylabel, title, file_path, reg_line=None, reg_y=None, labe
     plt.figure(figsize=(10, 5))
     plt.scatter(x, y)
     
-    if with_regression:
-        plt.plot(x, reg_line, label=label)
-        plt.text(10, 40.5, reg_y, fontsize=12)
-    else:
-        plt.plot(x, y, label=label)
+    # if with_regression:
+    #     plt.plot(x, reg_line, label=label)
+    #     plt.text(10, 40.5, reg_y, fontsize=12)
+    # else:
+    #     plt.plot(x, y, label=label)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
@@ -72,7 +83,7 @@ def run_process_stress_results(results):
             "Number of concurrent rooms", 
             "Avg. queue time", 
             "Number of concurrent rooms",
-            "Avg. queue time", 
+            "Avg. queue time (seconds)", 
             "Avg. queue time vs. Number of concurrent rooms",
             f"./results/Stress_test/processed_results/number_of_workers/{workers}_workers.svg"
 
@@ -113,7 +124,7 @@ def run_process_stress_results(results):
             "Number of workers", 
             "Avg. queue time", 
             "Number of workers",
-            "Avg. queue time", 
+            "Avg. queue time (seconds)", 
             "Avg. queue time vs. Number of workers",
             f"./results/Stress_test/processed_results/concurrent_rooms/{con}_concurrent_rooms.svg"
         )

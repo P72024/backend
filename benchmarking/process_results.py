@@ -5,11 +5,11 @@ import numpy as np
 import math
 
 rcParams.update({
-    'font.size': 16,              
-    'axes.titlesize': 16,
-    'axes.labelsize': 16,
-    'xtick.labelsize': 12,
-    'ytick.labelsize': 12,
+    'font.size': 20,              
+    'axes.titlesize': 22,
+    'axes.labelsize': 22,
+    'xtick.labelsize': 16,
+    'ytick.labelsize': 16,
     'legend.fontsize': 14,
     'font.family': 'serif',       # Match LaTeX serif font
 })
@@ -20,7 +20,7 @@ path_client_man = './results/Results_man/raw_data/client/results_client_avg.csv'
 processed_results_woman = './results/Results_woman/processed_results/'
 processed_results_man = './results/Results_man/processed_results/'
 
-current_path = "man"
+current_path = "woman"
 
 if current_path == "man":
     path_backend = path_backend_man
@@ -94,9 +94,9 @@ def plot_and_find_top_points(results, results_client, top_x_num_points, weight, 
 
     combined_points = pd.merge(top_wer_points, top_wil_points)
     if take_latency_into_account:
-        plot_scatter(combined_points, 'Word Information Loss (WIL)', 'Word Error Rate (WER)', 'Word Information Loss (WIL) (%)', 'Word Error Rate (WER) (%)', 'WER vs. WIL for Combined Points (Latency Considered)')
+        plot_scatter(combined_points, 'Word Information Loss (WIL)', 'Word Error Rate (WER)', 'Word Information Loss (WIL) (%)', 'Word Error Rate (WER) (%)', 'WER vs. WIL')
     else:
-        plot_scatter(combined_points, 'Word Information Loss (WIL)', 'Word Error Rate (WER)', 'Word Information Loss (WIL) (%)', 'Word Error Rate (WER) (%)', 'WER vs. WIL for Combined Points (Latency Not Considered)')
+        plot_scatter(combined_points, 'Word Information Loss (WIL)', 'Word Error Rate (WER)', 'Word Information Loss (WIL) (%)', 'Word Error Rate (WER) (%)', 'WER vs. WIL for Avg. Chunk Time')
     
     return combined_points
 def plot_timeline_from_csv(file_path):
@@ -252,7 +252,6 @@ def plot_chunk_time(optimal_csv_file, additional_csv_file):
     # Prepare data for plotting
     optimal_x = optimal_df["total_chunk_time"]
     optimal_y = optimal_df["distance_combined"]
-    optimal_colors = optimal_df["should_plot"].apply(lambda plot: 'cyan' if plot else 'black')
 
     additional_x = additional_df["total_chunk_time"]
     additional_y = additional_df["distance_combined"]
@@ -271,6 +270,9 @@ def plot_chunk_time(optimal_csv_file, additional_csv_file):
     cyan_points = optimal_df[optimal_df["should_plot"]]
     plt.scatter(cyan_points["total_chunk_time"], cyan_points["distance_combined"], c='cyan', s=50, label="Chosen Optimal Configuration")
 
+    for idx, (x, y) in enumerate(zip(cyan_points["total_chunk_time"], cyan_points["distance_combined"]), start=1):
+        plt.text(x, y - 5, str(idx), fontsize=22, color='red', ha='center', va='top')  # Adjust size/color/position
+
     # Trend line for optimal configurations
     sorted_indices = optimal_x.argsort()
     plt.plot(optimal_x.iloc[sorted_indices], optimal_y.iloc[sorted_indices], alpha=0.7, label="Trend Line")
@@ -280,18 +282,18 @@ def plot_chunk_time(optimal_csv_file, additional_csv_file):
     plt.ylim(0, 200)
 
     # Adding labels and title
-    plt.title("Total Chunk Time and Combined Error Magnitude (CEM) for Optimal Model Configurations")
+    plt.title("Total Chunk Time and Combined Error Magnitude (CEM)")
     plt.xlabel("Total Chunk Time (seconds)")
     plt.ylabel("Combined Error Magnitude (CEM)")
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.legend()
-
+    plt.tight_layout(pad = 0.25)
     # Show the plot
     plt.show()
 
 def distance_total_time_table(top_combined_points, take_latency_into_account):
     if take_latency_into_account:
-        plot_scatter(top_combined_points, 'total_chunk_time', 'distance_combined', 'Total Chunk Time (seconds)', 'WER+WIL Distance', 'Total Chunk Time vs. WER+WIL Distance (Latency Considered)')
+        plot_scatter(top_combined_points, 'total_chunk_time', 'distance_combined', 'Total Chunk Time (seconds)', 'Combined Error Magnitude (CEM)', 'Total Chunk Time vs. Combined Error Magnitude (CEM)')
     else:
         plot_scatter(top_combined_points, 'Avg. chunk time', 'distance_combined', 'Avg. chunk time (seconds)', 'WER+WIL Distance', 'Avg. chunk time vs. WER+WIL Distance (Latency Not Considered)')
 
@@ -327,7 +329,7 @@ def plot_error_bars(df, x_col, y_col, model_col, xlabel, ylabel, title):
         # Plot mean ± std dev
         plt.errorbar(
             adjusted_positions, model_stats['mean'], yerr=model_stats['std'],
-            fmt='o', label=f'{model} Mean ± Std Dev', color=model_colors[i],
+            fmt='o', label=f'{model} Mean ± SD', color=model_colors[i],
             capsize=5, markersize=8, linewidth=2  # Larger markersize and thicker line
         )
         
@@ -366,7 +368,7 @@ def plot_scatter(df, x_col, y_col, xlabel, ylabel, title):
 def run_process_results (with_latency, current_path):
     # plot_chunk_time(processed_results + 'testo.csv')
     # plot_timeline_from_csv(processed_results + 'testo.csv')
-    plot_chunk_time('./results/Results_man/processed_results/testo.csv', './results/Results_man/processed_results/top_combined_points_with_latency.csv')
+    # plot_chunk_time(processed_results + 'testo.csv', processed_results + 'top_combined_points_with_latency.csv')
     # # Parameters
     top_x_num_points = 10000
     weight = 1
@@ -391,9 +393,11 @@ def run_process_results (with_latency, current_path):
 
     distance_total_time_table(top_combined_points, take_latency_into_account)
 
-    # if take_latency_into_account:
-    #     process_and_save_lowest_distance_points(top_combined_points, [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5, 5.5, 6, 6.5, 7, 7.5, 8], processed_results + 'testo.csv', take_latency_into_account)
-    # else:
-    #     process_and_save_lowest_distance_points(top_combined_points, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results + 'lowest_distance_per_interval_without_latency.csv', take_latency_into_account)
+    if take_latency_into_account:
+        pass
+        # process_and_save_lowest_distance_points(top_combined_points, [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5, 5.5, 6, 6.5, 7, 7.5, 8], processed_results + 'testo.csv', take_latency_into_account)
+    else:
+        pass
+        # process_and_save_lowest_distance_points(top_combined_points, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], processed_results + 'lowest_distance_per_interval_without_latency.csv', take_latency_into_account)
 
 run_process_results(True, current_path)
