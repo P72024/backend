@@ -15,22 +15,55 @@ rcParams.update({
     'font.family': 'serif',
 })
 
-def plot_concurrent_rooms(df, x_col, y_col, xlabel, ylabel, title, file_path):
-    coefficients = np.polyfit(df[x_col], df[y_col], 2)
-    a, b, c = coefficients
-    regression_line = a*(df[x_col]**2) + b*(df[x_col]) + c
+def plot_concurrent_rooms(avg_df, raw_df, x_col, y_col, xlabel, ylabel, title, file_path):
+    # coefficients = np.polyfit(avg_df[x_col], avg_df[y_col], 2)
+    # a, b, c = coefficients
+    # regression_line = a*(avg_df[x_col]**2) + b*(avg_df[x_col]) + c
 
-    y=f'{a:.2f}x^2 + {b:.2f}x + {c:.2f}'
+    # y=f'{a:.2f}x^2 + {b:.2f}x + {c:.2f}'
 
-    plot(df[x_col], df[y_col], xlabel, ylabel, title, file_path, reg_line=regression_line, reg_y=y, label='Regression Line (y={a:.2f}x^2 + {b:.2f}x + {c:.2f}', with_regression=True)
+    plot(avg_df[x_col], avg_df[y_col], raw_df[x_col], raw_df[y_col], xlabel, ylabel, title, file_path, type="rooms")
 
 
-def plot_workers(df, x_col, y_col, xlabel, ylabel, title, file_path):
-    plot(df[x_col], df[y_col], xlabel, ylabel, title, file_path)
+def plot_workers(avg_df, raw_df, x_col, y_col, xlabel, ylabel, title, file_path):
+    plot(avg_df[x_col], avg_df[y_col], raw_df[x_col], raw_df[y_col], xlabel, ylabel, title, file_path, type="workers")
 
-def plot(x, y, xlabel, ylabel, title, file_path, reg_line=None, reg_y=None, label=None, with_regression=None):
+def plot(avg_x, avg_y, raw_x, raw_y, xlabel, ylabel, title, file_path, reg_line=None, reg_y=None, label=None, with_regression=None, type=None):
     plt.figure(figsize=(10, 5))
-    plt.scatter(x, y)
+
+    if type == "rooms":
+        # Create groups 
+        index_groups = []
+        for j in range(0, 3):
+            index_group = []
+            for i in range(raw_x.index[0] + j, raw_x.index[-1] + 1, raw_x.index[3] - raw_x.index[0]):
+                index_group.append(int(i/(raw_x.index[0]) - 1 + i - raw_x.index[0])) if raw_x.index[0] != 0 else index_group.append(i)
+            index_groups.append(index_group)
+        for i, group in enumerate(index_groups):
+            x = raw_x.iloc[group]
+            y = [raw_y[index] for index in group]
+            plt.plot(x, y, label=f"Iteration {i + 1}", linestyle='-', marker='o')
+    elif type == "workers":
+        # Create groups 
+        index_groups = []
+        for j in range(0, 3):
+            x = 0
+            index_group = []
+            for i in range(raw_x.index[0] + j, raw_x.index[-1] + 1, raw_x.index[3] - raw_x.index[0]):
+                p = 2 if j == 1 else 2
+                index_group.append(int(i/i) - 1 + ((x + j) * 3) - (p * j)) if i != 0 else index_group.append(i)
+                x += 1
+                index_group.sort()
+            index_groups.append(index_group)
+        for i, group in enumerate(index_groups):
+            x = raw_x.iloc[group]
+            y = [raw_y[index] for index in group]
+            plt.plot(x, y, label=f"Iteration {i + 1}", linestyle='-', marker='o')
+
+    # Plot average data
+
+    plt.scatter(avg_x, avg_y, color='red')
+    plt.plot(avg_x, avg_y, color='red', label="Average", marker='o')
     
     # if with_regression:
     #     plt.plot(x, reg_line, label=label)
@@ -41,18 +74,27 @@ def plot(x, y, xlabel, ylabel, title, file_path, reg_line=None, reg_y=None, labe
     plt.ylabel(ylabel)
     plt.title(title)
     plt.grid(True)
+    plt.legend()
+    # plt.show()
     plt.savefig(file_path, format='svg')
 
 
 path_stress_test = './results/Stress_test/raw_data/stress_test_results_avg.csv'
+path_stress_test_raw = './results/Stress_test/raw_data/stress_test_results.csv'
 stress_test_results = pd.read_csv(path_stress_test)
+stress_test_results_raw = pd.read_csv(path_stress_test_raw)
 
-def run_process_stress_results(results):
+def run_process_stress_results(results, raw_results):
     df = pd.DataFrame(results, columns=["num_workers", "num_concurrent_rooms", "client_results"])
     df["client_results"] = df["client_results"].apply(ast.literal_eval)
+    df_raw = pd.DataFrame(raw_results, columns=["num_workers", "num_concurrent_rooms", "client_results"])
+    df_raw["client_results"] = df_raw["client_results"].apply(ast.literal_eval)
+
     worker_range = [1, 2, 4, 8, 16]
     concurrent_range = [2, 4, 8, 16, 32]
-    max_queue_time_dict, min_queue_time_dict, avg_queue_time_dict, avg_queue_time_with_rooms_dict, avg_queue_time_with_workers_dict = {}, {}, {}, {}, {}
+    max_queue_time_dict, min_queue_time_dict, avg_queue_time_dict = {}, {}, {}
+
+    avg_queue_time_with_rooms_dict, avg_queue_time_with_workers_dict, avg_queue_time_with_rooms_dict_raw, avg_queue_time_with_workers_dict_raw =  {}, {}, {}, {}
 
     for index, row in df.iterrows():
         max_queue_time_dict[index] = []
@@ -67,6 +109,9 @@ def run_process_stress_results(results):
         df_specific_num_of_workers = df[df["num_workers"] == workers]
         avg_queue_time_with_workers = []
         avg_queue_time_with_workers_dict = dict()
+        df_specific_num_of_workers_raw = df_raw[df_raw["num_workers"] == workers]
+        avg_queue_time_with_workers_raw = []
+        avg_queue_time_with_workers_dict_raw = dict()
 
         for index, row in df_specific_num_of_workers.iterrows():
             avg_queue_time_with_workers_dict[index] = []
@@ -75,11 +120,25 @@ def run_process_stress_results(results):
         
         for index, val in avg_queue_time_with_workers_dict.items():
             avg_queue_time_with_workers.append(sum(val)/ len(val))
+        
+        # Raw data
+        for index, row in df_specific_num_of_workers_raw.iterrows():
+            avg_queue_time_with_workers_dict_raw[index] = []
+            for client_id, value in row["client_results"].items():
+                avg_queue_time_with_workers_dict_raw[index].append(float(value["Avg. queue time"]) / 1000)
+        
+        for index, val in avg_queue_time_with_workers_dict_raw.items():
+            avg_queue_time_with_workers_raw.append(sum(val)/ len(val))
 
-        plot_concurrent_rooms({ 
+        plot_concurrent_rooms(
+            { 
                 "Avg. queue time": avg_queue_time_with_workers,
                 "Number of concurrent rooms": df_specific_num_of_workers["num_concurrent_rooms"]
             }, 
+            {
+                "Avg. queue time": avg_queue_time_with_workers_raw,
+                "Number of concurrent rooms": df_specific_num_of_workers_raw["num_concurrent_rooms"]
+            },
             "Number of concurrent rooms", 
             "Avg. queue time", 
             "Number of concurrent rooms",
@@ -108,6 +167,9 @@ def run_process_stress_results(results):
         df_specific_num_of_rooms = df[df["num_concurrent_rooms"] == con]
         avg_queue_time_with_rooms = []
         avg_queue_time_with_rooms_dict = dict()
+        df_specific_num_of_rooms_raw = df_raw[df_raw["num_concurrent_rooms"] == con]
+        avg_queue_time_with_rooms_raw = []
+        avg_queue_time_with_rooms_dict_raw = dict()
 
         for index, row in df_specific_num_of_rooms.iterrows():
             avg_queue_time_with_rooms_dict[index] = []
@@ -117,9 +179,22 @@ def run_process_stress_results(results):
         for index, val in avg_queue_time_with_rooms_dict.items():
             avg_queue_time_with_rooms.append(sum(val)/ len(val))
 
+        # Raw
+        for index, row in df_specific_num_of_rooms_raw.iterrows():
+            avg_queue_time_with_rooms_dict_raw[index] = []
+            for client_id, value in row["client_results"].items():
+                avg_queue_time_with_rooms_dict_raw[index].append(float(value["Avg. queue time"]) / 1000)
+        
+        for index, val in avg_queue_time_with_rooms_dict_raw.items():
+            avg_queue_time_with_rooms_raw.append(sum(val)/ len(val))
+
         plot_workers({ 
                 "Avg. queue time": avg_queue_time_with_rooms,
                 "Number of workers": df_specific_num_of_rooms["num_workers"]
+            }, 
+            { 
+                "Avg. queue time": avg_queue_time_with_rooms_raw,
+                "Number of workers": df_specific_num_of_rooms_raw["num_workers"]
             }, 
             "Number of workers", 
             "Avg. queue time", 
@@ -129,4 +204,4 @@ def run_process_stress_results(results):
             f"./results/Stress_test/processed_results/concurrent_rooms/{con}_concurrent_rooms.svg"
         )
 
-run_process_stress_results(stress_test_results)
+run_process_stress_results(stress_test_results, stress_test_results_raw)
